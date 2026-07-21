@@ -7,59 +7,456 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body {
-            font-family: Arial, sans-serif;
             background-color: #121212;
             color: #ffffff;
+            font-family: Arial, sans-serif;
             text-align: center;
-            padding: 20px;
             margin: 0;
+            padding: 12px;
         }
-        h1 { color: #f39c12; }
-        .mine-btn {
-            background-color: #e67e22;
+        h1 { color: #f39c12; font-size: 20px; margin-bottom: 5px; }
+        
+        .currency-box {
+            display: flex;
+            justify-content: space-around;
+            background: #1e1e1e;
+            padding: 8px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+        .currency { font-size: 14px; font-weight: bold; }
+        .coins { color: #2ecc71; }
+        .emeralds { color: #2ecc71; text-shadow: 0 0 5px #2ecc71; }
+        .ton { color: #0088cc; }
+
+        .status-card {
+            background: #252525;
+            padding: 10px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+        }
+        .btn-action {
+            background: #e67e22;
             color: white;
             border: none;
-            padding: 15px 30px;
-            font-size: 20px;
-            border-radius: 10px;
+            padding: 10px 12px;
+            font-size: 14px;
+            border-radius: 8px;
+            font-weight: bold;
             cursor: pointer;
-            margin-top: 30px;
-            box-shadow: 0px 4px 10px rgba(0,0,0,0.5);
+            width: 100%;
+            margin-top: 6px;
         }
-        .mine-btn:active {
-            background-color: #d35400;
-            transform: scale(0.98);
+        .btn-action:disabled { background: #555; cursor: not-allowed; }
+        
+        /* Tabs para Navegar */
+        .tab-container {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 10px;
         }
-        #score {
-            font-size: 28px;
-            margin: 20px 0;
-            color: #2ecc71;
+        .tab-btn {
+            flex: 1;
+            padding: 8px;
+            background: #2a2a2a;
+            color: #ccc;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .tab-btn.active {
+            background: #f39c12;
+            color: #000;
+        }
+
+        .section-page { display: none; text-align: left; background: #1e1e1e; padding: 12px; border-radius: 12px; }
+        .section-page.active { display: block; }
+        .section-page h2 { color: #f1c40f; font-size: 16px; margin-top: 0; margin-bottom: 10px; }
+
+        .upgrade-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #2a2a2a;
+            padding: 8px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+        }
+        .upgrade-btn {
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .upgrade-btn:disabled { background: #555; cursor: not-allowed; }
+
+        /* Barra de Experiencia */
+        .progress-bar-bg {
+            background: #333;
+            border-radius: 10px;
+            height: 16px;
+            width: 100%;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+        .progress-bar-fill {
+            background: #9b59b6;
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s;
         }
     </style>
 </head>
 <body>
 
-    <h1>⛏️ Crypto Miner Mini-App</h1>
-    <p>¡Toca el botón para minar!</p>
+    <h1>⛏️ Crypto Miner Game</h1>
 
-    <div id="score">Monedas: 0</div>
-    
-    <button class="mine-btn" onclick="minar()">¡Minar! 🪙</button>
+    <!-- Balance General -->
+    <div class="currency-box">
+        <div class="currency coins">🪙 <span id="txt-monedas">0.000</span></div>
+        <div class="currency emeralds">💎 <span id="txt-esmeraldas">0.00</span></div>
+        <div class="currency ton">💎 <span id="txt-deposito-esmeraldas">0</span> Dep.</div>
+    </div>
+
+    <!-- Panel del Minero Principal -->
+    <div class="status-card">
+        <div><strong>Estado:</strong> <span id="txt-estado" style="color: #2ecc71;">Minando...</span></div>
+        <div style="font-size: 12px; color: #aaa; margin-top: 3px;">
+            Sin reclamar: <span id="txt-unclaimed">0.0000</span> / <span id="txt-max-unclaimed">0.600</span> 🪙
+        </div>
+        <button class="btn-action" onclick="reclamar()">📥 Reclamar Monedas</button>
+        <button class="btn-action" style="background:#27ae60; margin-top:5px;" onclick="golpeManual()">🔨 Golpe Manual (+<span id="txt-click-power">0.001</span>)</button>
+    </div>
+
+    <!-- Navegación por Pestañas -->
+    <div class="tab-container">
+        <button class="tab-btn active" id="btn-tab-temporada" onclick="navegar('temporada')">🍂 Temporada</button>
+        <button class="tab-btn" id="btn-tab-vip" onclick="navegar('vip')">💎 VIP</button>
+        <button class="tab-btn" id="btn-tab-perfil" onclick="navegar('perfil')">👤 Perfil</button>
+    </div>
+
+    <!-- TIENDA DE TEMPORADA -->
+    <div id="page-temporada" class="section-page active">
+        <h2>🍂 Tienda de Temporada (Monedas 🪙)</h2>
+        <div id="lista-temporada"></div>
+    </div>
+
+    <!-- TIENDA VIP -->
+    <div id="page-vip" class="section-page">
+        <h2>💎 Tienda VIP (Esmeraldas 💎)</h2>
+        <div id="lista-vip"></div>
+    </div>
+
+    <!-- PÁGINA DE PERFIL Y BONO DIARIO -->
+    <div id="page-perfil" class="section-page">
+        <h2>👤 Perfil del Jugador</h2>
+        <div style="background:#2a2a2a; padding:10px; border-radius:8px; margin-bottom:10px;">
+            <div><strong>Nivel actual:</strong> <span id="txt-nivel" style="color:#f39c12; font-weight:bold;">1</span> / 50</div>
+            <div style="font-size:12px; color:#ccc; margin-top:3px;">XP: <span id="txt-xp">0</span> / <span id="txt-xp-max">100</span></div>
+            <div class="progress-bar-bg">
+                <div class="progress-bar-fill" id="bar-xp"></div>
+            </div>
+            <div style="font-size:11px; color:#aaa; margin-top:5px;">💡 Ganarás +0.05 Esmeraldas 💎 por cada nivel subido.</div>
+        </div>
+
+        <h2>🎁 Bono Diario</h2>
+        <div style="background:#2a2a2a; padding:10px; border-radius:8px; margin-bottom:10px;">
+            <div style="font-size:12px; color:#ccc;">Recompensa: 1-10 Monedas 🪙 + 20 XP</div>
+            <button class="btn-action" style="background:#9b59b6;" id="btn-bono" onclick="reclamarBonoDiario()">🎁 Reclamar Bono Diario</button>
+            <div style="font-size:11px; color:#e67e22; margin-top:4px;" id="txt-timer-bono"></div>
+        </div>
+
+        <h2>🏦 Intercambio de Monedas</h2>
+        <div style="background:#2a2a2a; padding:10px; border-radius:8px; margin-bottom:10px;">
+            <div style="font-size:12px; color:#ccc;">500 Monedas 🪙 = 1 Esmeralda 💎</div>
+            <button class="btn-action" style="background:#2ecc71; color:#000;" onclick="canjearEsmeralda()">Canjear 500 🪙 por 1 💎</button>
+        </div>
+
+        <h2>💸 Retiro TON & Depósito</h2>
+        <div style="background:#2a2a2a; padding:10px; border-radius:8px;">
+            <div style="font-size:11px; color:#aaa;" id="txt-info-retiro">Sin depósito de 3 💎: Retiro máx. 0.0003 TON</div>
+            <button class="btn-action" style="background:#0088cc;" onclick="solicitarRetiro()">Retirar TON</button>
+            <button class="btn-action" style="background:#8e44ad;" onclick="depositarEsmeraldas()">➕ Depositar 3 Esmeraldas</button>
+        </div>
+    </div>
 
     <script>
         let tg = window.Telegram.WebApp;
         tg.expand();
 
-        let monedas = 0;
+        // Datos Persistentes
+        let monedas = parseFloat(localStorage.getItem('monedas')) || 0;
+        let esmeraldas = parseFloat(localStorage.getItem('esmeraldas')) || 0;
+        let esmeraldasDepositadas = parseInt(localStorage.getItem('esmeraldasDepositadas')) || 0;
+        let lastClaim = parseInt(localStorage.getItem('lastClaim')) || Date.now();
+        
+        // Perfil y XP
+        let nivel = parseInt(localStorage.getItem('nivel')) || 1;
+        let xp = parseInt(localStorage.getItem('xp')) || 0;
+        let lastBono = parseInt(localStorage.getItem('lastBono')) || 0;
 
-        function minar() {
-            monedas += 1;
-            document.getElementById('score').innerText = "Monedas: " + monedas;
+        // Mejoras
+        let mejorasTemp = JSON.parse(localStorage.getItem('mejorasTemp')) || { pico: 0, habilidad: 0, salud: 0, cansancio: 0, fuerza: 0 };
+        let mejorasVIP = JSON.parse(localStorage.getItem('mejorasVIP')) || { pico: 1, habilidad: 1, salud: 1, cansancio: 1, fuerza: 1 };
+
+        const nombresMejoras = { pico: "⛏️ Pico", habilidad: "⚡ Habilidad", salud: "❤️ Salud", cansancio: "💤 Cansancio", fuerza: "💪 Fuerza" };
+
+        function guardar() {
+            localStorage.setItem('monedas', monedas);
+            localStorage.setItem('esmeraldas', esmeraldas);
+            localStorage.setItem('esmeraldasDepositadas', esmeraldasDepositadas);
+            localStorage.setItem('lastClaim', lastClaim);
+            localStorage.setItem('nivel', nivel);
+            localStorage.setItem('xp', xp);
+            localStorage.setItem('lastBono', lastBono);
+            localStorage.setItem('mejorasTemp', JSON.stringify(mejorasTemp));
+            localStorage.setItem('mejorasVIP', JSON.stringify(mejorasVIP));
+        }
+
+        // Cálculo dinámico exacto de XP por nivel (hasta Nivel 50)
+        function obtenerXPNecesaria(lvl) {
+            if (lvl === 1) return 100;
+            if (lvl === 2) return 200;
             
-            if (tg.HapticFeedback) {
-                tg.HapticFeedback.impactOccurred('medium');
+            let xpReq = 200;
+            for (let i = 3; i <= lvl; i++) {
+                if (i <= 10) xpReq += 50;
+                else if (i <= 20) xpReq += 100;
+                else if (i <= 30) xpReq += 150;
+                else if (i <= 50) xpReq += 200;
+            }
+            return xpReq;
+        }
+
+        function agregarXP(cantidad) {
+            if (nivel >= 50) return;
+            xp += cantidad;
+            let xpReq = obtenerXPNecesaria(nivel);
+            
+            while (xp >= xpReq && nivel < 50) {
+                xp -= xpReq;
+                nivel++;
+                esmeraldas += 0.05; // Ganancia por subir nivel
+                alert(`🎉 ¡Subiste al Nivel ${nivel}! Recibiste +0.05 Esmeraldas 💎`);
+                xpReq = obtenerXPNecesaria(nivel);
+            }
+            guardar();
+        }
+
+        function calcularTasa() {
+            let bonusPico = (mejorasVIP.pico - 1) * 0.2 + (mejorasTemp.pico * 0.05);
+            let bonusFuerza = (mejorasVIP.fuerza - 1) * 0.1 + (mejorasTemp.fuerza * 0.03);
+            return (1 / 18000) * (1 + bonusPico) * (1 + bonusFuerza);
+        }
+
+        function obtenerMaxHoras() {
+            return 3 + (mejorasVIP.cansancio - 1) * 0.5 + (mejorasTemp.cansancio * 0.2);
+        }
+
+        function actualizarJuego() {
+            let ahora = Date.now();
+            let segundosTranscurridos = (ahora - lastClaim) / 1000;
+            let maxSegundos = obtenerMaxHoras() * 3600;
+
+            let minando = true;
+            if (segundosTranscurridos >= maxSegundos) {
+                segundosTranscurridos = maxSegundos;
+                minando = false;
+            }
+
+            let sinReclamar = segundosTranscurridos * calcularTasa();
+            let maxSinReclamar = maxSegundos * calcularTasa();
+
+            document.getElementById('txt-monedas').innerText = monedas.toFixed(3);
+            document.getElementById('txt-esmeraldas').innerText = esmeraldas.toFixed(2);
+            document.getElementById('txt-deposito-esmeraldas').innerText = esmeraldasDepositadas;
+            document.getElementById('txt-unclaimed').innerText = sinReclamar.toFixed(4);
+            document.getElementById('txt-max-unclaimed').innerText = maxSinReclamar.toFixed(3);
+            document.getElementById('txt-click-power').innerText = (0.001 * mejorasVIP.habilidad + mejorasTemp.habilidad * 0.0005).toFixed(4);
+
+            let txtEstado = document.getElementById('txt-estado');
+            if (minando) {
+                txtEstado.innerText = "Minando...";
+                txtEstado.style.color = "#2ecc71";
+            } else {
+                txtEstado.innerText = "😴 Minero Cansado (Reclama para reactivar)";
+                txtEstado.style.color = "#e74c3c";
+            }
+
+            // Actualizar Perfil
+            let xpReq = obtenerXPNecesaria(nivel);
+            document.getElementById('txt-nivel').innerText = nivel;
+            document.getElementById('txt-xp').innerText = xp;
+            document.getElementById('txt-xp-max').innerText = nivel >= 50 ? "MAX" : xpReq;
+            let porcentaje = nivel >= 50 ? 100 : Math.min(100, (xp / xpReq) * 100);
+            document.getElementById('bar-xp').style.width = porcentaje + "%";
+
+            // Estado Bono Diario
+            let btnBono = document.getElementById('btn-bono');
+            let txtTimerBono = document.getElementById('txt-timer-bono');
+            let horasDesdeBono = (ahora - lastBono) / (1000 * 3600);
+
+            if (horasDesdeBono >= 24) {
+                btnBono.disabled = false;
+                txtTimerBono.innerText = "¡Bono disponible!";
+            } else {
+                btnBono.disabled = true;
+                let horasRestantes = Math.ceil(24 - horasDesdeBono);
+                txtTimerBono.innerText = `Disponible en aprox. ${horasRestantes}h`;
+            }
+
+            let infoRetiro = document.getElementById('txt-info-retiro');
+            if (esmeraldasDepositadas >= 3) {
+                infoRetiro.innerText = "✅ Depósito verificado. Retiros ilimitados.";
+                infoRetiro.style.color = "#2ecc71";
+            } else {
+                infoRetiro.innerText = `⚠️ Retiro sin depósito (mín. 3 💎): Máx 0.0003 TON (${esmeraldasDepositadas}/3 💎)`;
+                infoRetiro.style.color = "#e67e22";
+            }
+
+            renderizarTiendas();
+        }
+
+        function navegar(tab) {
+            document.querySelectorAll('.section-page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+
+            document.getElementById(`page-${tab}`).classList.add('active');
+            document.getElementById(`btn-tab-${tab}`).classList.add('active');
+        }
+
+        function renderizarTiendas() {
+            // Tienda de Temporada (Monedas 🪙, Max Grado 5: 100, 150, 200, 250, 300)
+            let htmlTemp = "";
+            for (let key in mejorasTemp) {
+                let grado = mejorasTemp[key];
+                let costo = 100 + (grado * 50);
+                let maxed = grado >= 5;
+
+                htmlTemp += `
+                    <div class="upgrade-item">
+                        <div><strong>${nombresMejoras[key]} (Grado ${grado}/5)</strong></div>
+                        <button class="upgrade-btn" onclick="comprarTemporada('${key}')" ${maxed ? 'disabled' : ''}>
+                            ${maxed ? 'MAX' : costo + ' 🪙'}
+                        </button>
+                    </div>
+                `;
+            }
+            document.getElementById('lista-temporada').innerHTML = htmlTemp;
+
+            // Tienda VIP (Esmeraldas 💎)
+            let htmlVIP = "";
+            for (let key in mejorasVIP) {
+                let lvl = mejorasVIP[key];
+                let costo = lvl * 2;
+
+                htmlVIP += `
+                    <div class="upgrade-item">
+                        <div><strong>${nombresMejoras[key]} (Niv. ${lvl})</strong></div>
+                        <button class="upgrade-btn" style="background:#8e44ad;" onclick="comprarVIP('${key}')">
+                            ${costo} 💎
+                        </button>
+                    </div>
+                `;
+            }
+            document.getElementById('lista-vip').innerHTML = htmlVIP;
+        }
+
+        function reclamarBonoDiario() {
+            let ahora = Date.now();
+            if ((ahora - lastBono) / (1000 * 3600) >= 24) {
+                let bonoMonedas = Math.floor(Math.random() * 10) + 1; // 1 a 10 monedas
+                monedas += bonoMonedas;
+                lastBono = ahora;
+                agregarXP(20);
+                guardar();
+                actualizarJuego();
+                alert(`🎁 ¡Bono Diario Reclamado!\n+${bonoMonedas} Monedas 🪙\n+20 XP ⭐`);
+                if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
             }
         }
+
+        function comprarTemporada(tipo) {
+            let grado = mejorasTemp[tipo];
+            if (grado >= 5) return;
+            let costo = 100 + (grado * 50);
+            if (monedas >= costo) {
+                monedas -= costo;
+                mejorasTemp[tipo]++;
+                guardar();
+                actualizarJuego();
+                if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+            } else { alert(`Necesitas ${costo} monedas.`); }
+        }
+
+        function comprarVIP(tipo) {
+            let lvl = mejorasVIP[tipo];
+            let costo = lvl * 2;
+            if (esmeraldas >= costo) {
+                esmeraldas -= costo;
+                mejorasVIP[tipo]++;
+                guardar();
+                actualizarJuego();
+                if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+            } else { alert(`Necesitas ${costo} Esmeraldas 💎.`); }
+        }
+
+        function canjearEsmeralda() {
+            if (monedas >= 500) {
+                monedas -= 500;
+                esmeraldas += 1;
+                guardar();
+                actualizarJuego();
+                alert("¡Canjeaste 500 monedas por 1 Esmeralda 💎!");
+            } else {
+                alert("Necesitas al menos 500 monedas para realizar el canje.");
+            }
+        }
+
+        function reclamar() {
+            let ahora = Date.now();
+            let segundosTranscurridos = (ahora - lastClaim) / 1000;
+            let maxSegundos = obtenerMaxHoras() * 3600;
+            if (segundosTranscurridos > maxSegundos) segundosTranscurridos = maxSegundos;
+
+            let ganancia = segundosTranscurridos * calcularTasa();
+            monedas += ganancia;
+            lastClaim = ahora;
+            guardar();
+            actualizarJuego();
+            if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+        }
+
+        function golpeManual() {
+            monedas += (0.001 * mejorasVIP.habilidad + mejorasTemp.habilidad * 0.0005);
+            guardar();
+            actualizarJuego();
+            if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+        }
+
+        function depositarEsmeraldas() {
+            esmeraldasDepositadas += 3;
+            esmeraldas += 3;
+            guardar();
+            actualizarJuego();
+            alert("¡Has registrado un depósito de 3 Esmeraldas 💎!");
+        }
+
+        function solicitarRetiro() {
+            if (esmeraldasDepositadas < 3) {
+                alert("⚠️ Sin un depósito previo de al menos 3 Esmeraldas, el límite máximo permitido para este retiro es de 0.0003 TON.");
+            } else {
+                alert("✅ Solicitud de retiro procesada.");
+            }
+        }
+
+        setInterval(actualizarJuego, 1000);
+        actualizarJuego();
     </script>
 </body>
-</html
+            </html>
