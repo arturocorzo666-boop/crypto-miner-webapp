@@ -9,15 +9,14 @@
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
     <style>
         :root {
-            --bg-main: #0c0f17;
-            --card-bg: rgba(22, 27, 38, 0.75);
-            --card-border: rgba(255, 255, 255, 0.08);
-            --accent-orange: #ff9f1c;
-            --accent-green: #10b981;
-            --accent-blue: #0088cc;
-            --accent-purple: #8b5cf6;
-            --text-primary: #ffffff;
-            --text-secondary: #94a3b8;
+            --bg-dark: #121318;
+            --card-bg: #1e1f25;
+            --orange: #f59e0b;
+            --green: #10b981;
+            --blue: #38bdf8;
+            --purple: #8b5cf6;
+            --text-main: #ffffff;
+            --text-sub: #9ca3af;
         }
 
         * {
@@ -30,274 +29,239 @@
         }
 
         body {
-            background-color: var(--bg-main);
-            background-image: radial-gradient(circle at 50% 0%, rgba(255, 159, 28, 0.08), transparent 70%);
-            color: var(--text-primary);
+            background-color: var(--bg-dark);
+            color: var(--text-main);
             padding: 16px;
             padding-bottom: 40px;
-            max-width: 480px;
+            max-width: 500px;
             margin: 0 auto;
         }
 
-        /* --- MARCADORES SUPERIORES --- */
-        .header-title {
-            text-align: center;
-            font-size: 22px;
-            font-weight: 900;
-            letter-spacing: 0.5px;
-            color: var(--accent-orange);
-            margin-bottom: 14px;
-            text-shadow: 0 0 12px rgba(255, 159, 28, 0.3);
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
+        /* --- TÍTULO PRINCIPAL --- */
+        .app-title {
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--orange);
+            display: flex;
+            align-items: center;
+            justify-content: center;
             gap: 8px;
             margin-bottom: 16px;
         }
 
-        .stat-card {
-            background: var(--card-bg);
-            border: 1px solid var(--card-border);
-            backdrop-filter: blur(10px);
-            border-radius: 14px;
-            padding: 10px 6px;
-            text-align: center;
+        /* --- BARRA DE ESTADÍSTICAS (Igual a la imagen) --- */
+        .stats-bar {
             display: flex;
-            flex-direction: column;
+            justify-content: space-between;
             align-items: center;
-            gap: 2px;
-        }
-
-        .stat-value {
-            font-size: 15px;
-            font-weight: 800;
-        }
-
-        .stat-value.coins { color: #facc15; }
-        .stat-value.gems { color: #34d399; }
-        .stat-value.dep { color: #38bdf8; }
-
-        /* --- ZONA DE MINADO CENTRAL --- */
-        .mining-hero {
             background: var(--card-bg);
-            border: 1px solid var(--card-border);
-            backdrop-filter: blur(12px);
-            border-radius: 20px;
-            padding: 22px 16px;
-            text-align: center;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            padding: 12px 16px;
             margin-bottom: 16px;
         }
 
-        .miner-avatar {
-            font-size: 48px;
-            margin-bottom: 6px;
-            display: inline-block;
-            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4));
-        }
-
-        .status-badge {
-            display: inline-flex;
+        .stat-item {
+            display: flex;
             align-items: center;
             gap: 6px;
             font-size: 14px;
             font-weight: 700;
-            color: var(--accent-green);
-            background: rgba(16, 185, 129, 0.12);
-            padding: 4px 12px;
-            border-radius: 20px;
-            border: 1px solid rgba(16, 185, 129, 0.2);
-            margin-bottom: 8px;
         }
 
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            background-color: var(--accent-green);
+        /* Colores exactos de los textos en la barra superior */
+        .val-coins { color: #fbbf24; }
+        .val-gems { color: var(--green); }
+        .val-dep { color: var(--blue); }
+
+        /* Icono del banco dorado aproximado */
+        .bank-icon {
+            background: #fbbf24;
+            color: #000;
             border-radius: 50%;
-            box-shadow: 0 0 8px var(--accent-green);
-            animation: pulse 1.5s infinite;
+            width: 18px;
+            height: 18px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
         }
 
-        @keyframes pulse {
-            0% { opacity: 0.4; }
-            50% { opacity: 1; }
-            100% { opacity: 0.4; }
-        }
-
-        .unclaimed-info {
-            font-size: 13px;
-            color: var(--text-secondary);
+        /* --- TARJETA DE MINADO CENTRAL --- */
+        .mining-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 24px 16px;
+            text-align: center;
             margin-bottom: 16px;
         }
 
-        .unclaimed-info span {
-            color: #facc15;
-            font-weight: 700;
+        .miner-avatars {
+            font-size: 50px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: center;
+            gap: 4px;
         }
 
-        /* BOTONES PRINCIPALES */
+        .status-text {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .status-active {
+            color: var(--green);
+        }
+
+        .unclaimed-text {
+            font-size: 13px;
+            color: var(--text-sub);
+            margin-bottom: 20px;
+        }
+
+        /* BOTONES DE ACCIÓN */
         .btn {
             width: 100%;
             padding: 14px;
-            border-radius: 14px;
+            border-radius: 10px;
             border: none;
             font-size: 15px;
-            font-weight: 800;
-            color: #ffffff;
+            font-weight: 700;
+            color: #fff;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
-            transition: all 0.15s ease;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            margin-bottom: 12px;
         }
 
-        .btn:active {
-            transform: scale(0.98);
-        }
+        .btn:active { opacity: 0.8; }
 
-        .btn-claim {
-            background: linear-gradient(135deg, #ff9f1c, #d97706);
-            margin-bottom: 10px;
-        }
+        .btn-claim { background-color: var(--orange); }
+        .btn-hit { background-color: var(--green); margin-bottom: 0; }
 
-        .btn-hit {
-            background: linear-gradient(135deg, #10b981, #059669);
-        }
-
-        /* --- MENÚ DE PESTAÑAS --- */
-        .tabs-nav {
+        /* --- MENÚ DE PESTAÑAS (En un solo contenedor oscuro) --- */
+        .tabs-container {
+            background: var(--card-bg);
+            border-radius: 12px;
             display: grid;
             grid-template-columns: repeat(5, 1fr);
-            gap: 6px;
+            padding: 6px;
+            gap: 4px;
             margin-bottom: 16px;
         }
 
-        .tab-item {
-            background: var(--card-bg);
-            border: 1px solid var(--card-border);
-            border-radius: 12px;
-            padding: 10px 2px;
-            color: var(--text-secondary);
+        .tab-btn {
+            padding: 8px 0;
+            color: var(--text-sub);
             font-size: 11px;
-            font-weight: 700;
-            text-align: center;
-            cursor: pointer;
+            font-weight: 600;
             display: flex;
             flex-direction: column;
             align-items: center;
             gap: 4px;
-            transition: all 0.2s ease;
+            cursor: pointer;
+            border-radius: 8px;
         }
 
-        .tab-item.active {
-            background: var(--accent-orange);
-            color: #0c0f17;
-            border-color: var(--accent-orange);
-            box-shadow: 0 0 12px rgba(255, 159, 28, 0.4);
+        .tab-btn.active {
+            background-color: var(--orange);
+            color: #000;
+            font-weight: 800;
         }
 
-        /* --- BLOQUES DE SECCIÓN --- */
+        /* --- BLOQUES DE SECCIÓN (Perfil, Bono, etc.) --- */
         .section-card {
             background: var(--card-bg);
-            border: 1px solid var(--card-border);
-            backdrop-filter: blur(10px);
-            border-radius: 18px;
+            border-radius: 16px;
             padding: 16px;
-            margin-bottom: 14px;
+            margin-bottom: 16px;
         }
 
-        .section-header {
+        .section-title {
             font-size: 16px;
             font-weight: 800;
-            color: var(--accent-orange);
-            margin-bottom: 12px;
+            color: var(--orange);
             display: flex;
             align-items: center;
             gap: 8px;
+            margin-bottom: 12px;
         }
 
-        /* Perfil / Barra XP */
-        .xp-bar-container {
+        .icon-blue { color: var(--blue); }
+
+        /* Textos del Perfil */
+        .profile-text {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        
+        .xp-text {
+            font-size: 13px;
+            color: var(--text-sub);
+            margin-bottom: 8px;
+        }
+
+        .xp-bar-bg {
             width: 100%;
-            height: 10px;
-            background: rgba(255, 255, 255, 0.08);
-            border-radius: 6px;
-            overflow: hidden;
-            margin: 8px 0;
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            height: 8px;
+            background: #2a2c33;
+            border-radius: 4px;
+            margin-bottom: 12px;
         }
 
         .xp-bar-fill {
             width: 0%;
             height: 100%;
-            background: linear-gradient(90deg, #8b5cf6, #c084fc);
-            border-radius: 6px;
-            transition: width 0.3s ease;
+            background: var(--orange);
+            border-radius: 4px;
         }
 
-        .subtext {
+        .hint-text {
             font-size: 12px;
-            color: var(--text-secondary);
+            color: var(--text-sub);
         }
 
-        /* Botón Morado */
-        .btn-purple {
-            background: linear-gradient(135deg, #8b5cf6, #6d28d9);
-        }
+        /* Bono Diario */
+        .btn-purple { background-color: var(--purple); }
 
-        /* TON Wallet */
-        .verified-badge {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            color: var(--accent-green);
-            font-size: 12px;
-            font-weight: 700;
-            margin-bottom: 12px;
-        }
-
-        .wallet-center {
+        /* Wallet TON */
+        .wallet-container {
             display: flex;
             justify-content: center;
-            margin-bottom: 10px;
+            margin-bottom: 12px;
         }
     </style>
 </head>
 <body>
 
-    <!-- CABECERA DE LA APP -->
-    <h1 class="header-title">⛏️ Crypto Miner Game</h1>
-    
-    <div class="stats-grid">
-        <div class="stat-card">
-            <span class="subtext">Monedas</span>
-            <span class="stat-value coins">🪙 <span id="val-coins">0</span></span>
+    <!-- TÍTULO -->
+    <div class="app-title">⛏️ Crypto Miner Game</div>
+
+    <!-- BARRA DE ESTADÍSTICAS SUPERIOR -->
+    <div class="stats-bar">
+        <div class="stat-item val-coins">
+            <span class="bank-icon">🏛️</span> <span id="val-coins">0</span>
         </div>
-        <div class="stat-card">
-            <span class="subtext">Esmeraldas</span>
-            <span class="stat-value gems">💎 <span id="val-gems">0.00</span></span>
+        <div class="stat-item val-gems">
+            💎 <span id="val-gems">0.00</span>
         </div>
-        <div class="stat-card">
-            <span class="subtext">Depositado</span>
-            <span class="stat-value dep">💎 <span id="val-dep">0</span></span>
+        <div class="stat-item val-dep">
+            💎 <span id="val-dep">0</span> Dep.
         </div>
     </div>
 
-    <!-- ZONA DE MINADO CENTRAL -->
-    <div class="mining-hero">
-        <div class="miner-avatar">⛏️🧔</div>
-        <div>
-            <div class="status-badge">
-                <span class="status-dot"></span>
-                <span>Minando...</span>
-            </div>
+    <!-- ÁREA PRINCIPAL DE MINADO -->
+    <div class="mining-card">
+        <div class="miner-avatars">⛏️ 🧔</div>
+        
+        <div class="status-text">
+            Estado: <span class="status-active">Minando...</span>
         </div>
-        <div class="unclaimed-info">
+        
+        <div class="unclaimed-text">
             Sin reclamar: <span id="unclaimed-val">0.0000</span> / 0.960 🪙
         </div>
 
@@ -309,50 +273,53 @@
         </button>
     </div>
 
-    <!-- MENÚ / NAVEGACIÓN -->
-    <div class="tabs-nav">
-        <div class="tab-item" onclick="cambiarTab('tienda')">🪵<br>Tienda</div>
-        <div class="tab-item" onclick="cambiarTab('vip')">💎<br>VIP</div>
-        <div class="tab-item" onclick="cambiarTab('tareas')">📋<br>Tareas</div>
-        <div class="tab-item" onclick="cambiarTab('amigos')">👥<br>Amigos</div>
-        <div class="tab-item active" onclick="cambiarTab('perfil')">👤<br>Perfil</div>
+    <!-- MENÚ DE PESTAÑAS UNIFICADO -->
+    <div class="tabs-container">
+        <div class="tab-btn" onclick="cambiarTab('tienda')">🪵<span>Tienda</span></div>
+        <div class="tab-btn" onclick="cambiarTab('vip')">💎<span>VIP</span></div>
+        <div class="tab-btn" onclick="cambiarTab('tareas')">📋<span>Tareas</span></div>
+        <div class="tab-btn" onclick="cambiarTab('amigos')">👥<span>Amigos</span></div>
+        <div class="tab-btn active" onclick="cambiarTab('perfil')">👤<span>Perfil</span></div>
     </div>
 
     <!-- SECCIÓN: PERFIL DEL JUGADOR -->
     <div class="section-card">
-        <div class="section-header">👤 Perfil del Jugador</div>
-        <div style="font-weight: 700; font-size: 15px;">
-            Nivel actual: <span style="color: var(--accent-orange);" id="lvl-val">1</span> / 50
+        <div class="section-title">
+            <span class="icon-blue">👤</span> Perfil del Jugador
         </div>
-        <div class="subtext" style="margin-top: 4px;">XP: <span id="xp-val">0</span> / 100</div>
+        <div class="profile-text">
+            Nivel actual: <span style="color: var(--orange);" id="lvl-val">1</span> / 50
+        </div>
+        <div class="xp-text">XP: <span id="xp-val">0</span> / 100</div>
         
-        <div class="xp-bar-container">
+        <div class="xp-bar-bg">
             <div class="xp-bar-fill" id="xp-fill"></div>
         </div>
         
-        <div class="subtext">
+        <div class="hint-text">
             💡 Ganarás +0.05 Esmeraldas 💎 por nivel.
         </div>
     </div>
 
     <!-- SECCIÓN: BONO DIARIO -->
     <div class="section-card">
-        <div class="section-header">🎁 Bono Diario</div>
-        <div class="subtext" style="margin-bottom: 12px;">
+        <div class="section-title">
+            🎁 Bono Diario
+        </div>
+        <div class="hint-text" style="margin-bottom: 12px;">
             Recompensa: 1-10 Monedas 🪙 + 20 XP
         </div>
         <button class="btn btn-purple" onclick="reclamarBono()">
-            🎁 Reclamar Bono Diario
+            Bono Diario
         </button>
-        <div class="subtext" style="color: var(--accent-orange); text-align: center; margin-top: 8px;">
-            Disponible en aprox. 24h
-        </div>
     </div>
 
     <!-- SECCIÓN: INTERCAMBIO -->
-    <div class="section-card" style="text-align: center;">
-        <div class="section-header" style="justify-content: center;">🏦 Intercambio</div>
-        <div class="subtext" style="margin-bottom: 12px; color: #ffffff; font-weight: 700;">
+    <div class="section-card">
+        <div class="section-title" style="justify-content: center;">
+            🏦 Intercambio
+        </div>
+        <div class="hint-text" style="text-align: center; margin-bottom: 12px; color: #fff;">
             500 Monedas 🪙 = 1 Esmeralda 💎
         </div>
         <button class="btn btn-hit" onclick="canjearMonedas()">
@@ -362,21 +329,23 @@
 
     <!-- SECCIÓN: CONEXIÓN TON WALLET -->
     <div class="section-card">
-        <div class="section-header">💎 Conexión TON Wallet</div>
-        <div class="verified-badge">
+        <div class="section-title">
+            💎 Conexión TON Wallet
+        </div>
+        <div class="hint-text" style="color: var(--green); margin-bottom: 12px;">
             ✅ Depósito verificado. Retiros sin límites.
         </div>
         
-        <div class="wallet-center">
+        <div class="wallet-container">
             <div id="ton-connect-button"></div>
         </div>
 
-        <button class="btn btn-purple" style="margin-top: 8px;" onclick="depositarEsmeraldas()">
+        <button class="btn btn-purple" onclick="depositarEsmeraldas()">
             ➕ Depositar 3 Esmeraldas
         </button>
     </div>
 
-    <!-- LÓGICA DE JUEGO (MANTENIDA E INTEGRADA) -->
+    <!-- LÓGICA DE JUEGO (MANTENIDA EXACTA) -->
     <script>
         // Inicialización Telegram WebApp
         const tg = window.Telegram?.WebApp;
@@ -390,7 +359,7 @@
             buttonRootId: 'ton-connect-button'
         });
 
-        // Variables del juego (Inicio en cero)
+        // Variables del juego (Inicio en 0)
         let monedas = 0;
         let esmeraldas = 0.00;
         let depEsmeraldas = 0;
@@ -405,7 +374,7 @@
             }
         }, 1000);
 
-        // Funciones de interacción
+        // Funciones
         function reclamarMonedas() {
             monedas += sinReclamar;
             sinReclamar = 0.0;
@@ -437,11 +406,11 @@
         }
 
         function depositarEsmeraldas() {
-            alert("Redirigiendo a depósito de Esmeraldas...");
+            alert("Redirigiendo a depósito...");
         }
 
         function cambiarTab(nombreTab) {
-            console.log("Cambiando a pestaña:", nombreTab);
+            console.log("Pestaña activa:", nombreTab);
         }
     </script>
 </body>
