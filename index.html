@@ -2,808 +2,462 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Crypto Miner Game Pro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Crypto Miner Bot</title>
+    <!-- SDK de Telegram y TonConnect -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
     <style>
-        body {
-            background-color: #0d0e12;
-            color: #ffffff;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            text-align: center;
+        :root {
+            --bg-dark: #080b14;
+            --card-bg: rgba(22, 28, 45, 0.65);
+            --card-border: rgba(255, 255, 255, 0.1);
+            --accent-cyan: #00f2fe;
+            --accent-gold: #f59e0b;
+            --text-main: #ffffff;
+            --text-sub: #94a3b8;
+        }
+
+        * {
+            box-sizing: border-box;
             margin: 0;
-            padding: 12px;
+            padding: 0;
             user-select: none;
             -webkit-user-select: none;
         }
-        h1 { color: #f39c12; font-size: 18px; margin: 0 0 10px 0; }
-        
-        /* Balance */
-        .currency-box {
+
+        body {
+            background-color: var(--bg-dark);
+            background-image: 
+                radial-gradient(circle at 50% 35%, rgba(30, 27, 75, 0.8) 0%, rgba(8, 11, 20, 1) 75%);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            min-height: 100vh;
             display: flex;
-            justify-content: space-around;
-            background: rgba(255,255,255,0.05);
+            flex-direction: column;
+            justify-content: space-between;
+            overflow-x: hidden;
+            padding-bottom: 80px;
+        }
+
+        /* --- 1. HEADER (PERFIL & MONEDAS) --- */
+        .top-header {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding: 12px 16px;
+        }
+
+        .user-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .profile-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            padding: 6px 12px 6px 6px;
+            border-radius: 30px;
             backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.1);
-            padding: 10px;
-            border-radius: 14px;
-            margin-bottom: 12px;
-        }
-        .currency { font-size: 13px; font-weight: bold; }
-        .coins { color: #2ecc71; }
-        .emeralds { color: #00f2fe; text-shadow: 0 0 8px rgba(0,242,254,0.6); }
-        .ton { color: #0088cc; }
-
-        /* Contenedor Principal de Minado */
-        .status-card {
-            background: radial-gradient(circle at center, #1e2430 0%, #12151c 100%);
-            border: 1px solid rgba(243, 156, 18, 0.2);
-            padding: 16px;
-            border-radius: 20px;
-            margin-bottom: 12px;
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
         }
 
-        /* MONEDA 3D INTERACTIVA */
-        .click-target-wrapper {
-            position: relative;
-            width: 140px;
-            height: 140px;
-            margin: 10px auto;
-        }
-        
-        .click-target {
-            width: 100%;
-            height: 100%;
+        .avatar {
+            width: 38px;
+            height: 38px;
             border-radius: 50%;
-            background: radial-gradient(circle, #f39c12 0%, #d35400 70%, #7e3300 100%);
-            box-shadow: 0 0 30px rgba(243, 156, 18, 0.4), inset 0 0 15px rgba(255, 255, 255, 0.6);
+            border: 2px solid var(--accent-cyan);
+            object-fit: cover;
+        }
+
+        .user-details {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .username {
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .level-badge {
+            font-size: 11px;
+            color: var(--accent-cyan);
+            font-weight: 600;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            backdrop-filter: blur(10px);
+        }
+
+        .stat-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .stat-icon {
+            font-size: 20px;
+        }
+
+        .stat-title {
+            font-size: 10px;
+            color: var(--text-sub);
+            font-weight: bold;
+        }
+
+        .stat-value {
+            font-size: 14px;
+            font-weight: 800;
+        }
+
+        /* --- 2. ÁREA CENTRAL (MÁQUINA DE MINAR / MAIN RIG) --- */
+        .main-stage {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 10px 0;
+        }
+
+        .rig-container {
+            position: relative;
+            width: 260px;
+            height: 260px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 60px;
             cursor: pointer;
-            transition: transform 0.05s ease-out, box-shadow 0.1s;
-            position: relative;
-            z-index: 2;
+            transition: transform 0.1s ease;
         }
 
-        .click-target:active {
-            transform: scale(0.92);
-            box-shadow: 0 0 50px rgba(243, 156, 18, 0.8), inset 0 0 25px rgba(255, 255, 255, 0.9);
+        .rig-container:active {
+            transform: scale(0.95);
         }
 
-        .glow-effect {
+        .rig-glow {
             position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 160px;
-            height: 160px;
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, rgba(0, 242, 254, 0.35) 0%, rgba(0,0,0,0) 70%);
             border-radius: 50%;
-            background: radial-gradient(circle, rgba(243,156,18,0.3) 0%, rgba(0,0,0,0) 70%);
-            animation: pulseGlow 2s infinite alternate;
-            z-index: 1;
+            animation: pulseGlow 2.5s infinite alternate;
         }
 
         @keyframes pulseGlow {
-            0% { transform: translate(-50%, -50%) scale(0.9); opacity: 0.5; }
-            100% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+            0% { transform: scale(0.9); opacity: 0.5; }
+            100% { transform: scale(1.2); opacity: 0.9; }
         }
 
-        .click-pop {
+        .rig-image {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            z-index: 2;
+        }
+
+        /* Float Floating Click Particle (+1) */
+        .click-particle {
             position: absolute;
-            color: #2ecc71;
-            font-weight: 900;
-            font-size: 20px;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+            color: var(--accent-cyan);
+            font-size: 22px;
+            font-weight: bold;
             pointer-events: none;
-            animation: floatUp 0.7s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+            animation: floatUp 0.8s ease-out forwards;
             z-index: 10;
         }
 
         @keyframes floatUp {
-            0% { opacity: 1; transform: translateY(0) scale(1); }
-            50% { transform: translateY(-25px) scale(1.2); }
-            100% { opacity: 0; transform: translateY(-50px) scale(0.8); }
+            0% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-50px); }
         }
 
-        /* Botones */
-        .btn-action {
-            background: linear-gradient(135deg, #e67e22, #d35400);
-            color: white;
-            border: none;
-            padding: 12px;
-            font-size: 14px;
-            border-radius: 12px;
-            font-weight: bold;
-            cursor: pointer;
-            width: 100%;
-            margin-top: 8px;
-            box-shadow: 0 4px 12px rgba(230, 126, 34, 0.3);
-            transition: background 0.2s;
-        }
-        .btn-action:active { transform: translateY(1px); }
-        .btn-action:disabled { background: #444; box-shadow: none; cursor: not-allowed; }
-
-        /* Navegación */
-        .tab-container {
+        /* Banner Dorado de Saldo */
+        .gold-banner {
+            width: 90%;
+            background: linear-gradient(135deg, #fcd34d 0%, #f59e0b 50%, #d97706 100%);
+            border-radius: 20px;
+            padding: 14px 20px;
             display: flex;
-            gap: 4px;
-            margin-bottom: 12px;
-            overflow-x: auto;
-        }
-        .tab-btn {
-            flex: 1;
-            padding: 8px 2px;
-            background: #1e2430;
-            color: #8a99ad;
-            border: 1px solid rgba(255,255,255,0.05);
-            border-radius: 8px;
-            font-weight: bold;
-            cursor: pointer;
-            font-size: 10px;
-            white-space: nowrap;
-        }
-        .tab-btn.active {
-            background: #f39c12;
-            color: #000;
-            border-color: #f39c12;
-        }
-
-        .section-page { display: none; text-align: left; background: #161a23; padding: 14px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.05); }
-        .section-page.active { display: block; }
-        .section-page h2 { color: #f1c40f; font-size: 15px; margin-top: 0; margin-bottom: 10px; }
-
-        .upgrade-item, .task-item {
-            display: flex;
-            justify-content: space-between;
             align-items: center;
-            background: #1e2430;
-            padding: 10px 12px;
-            margin-bottom: 8px;
-            border-radius: 10px;
-        }
-        .upgrade-btn {
-            background: #27ae60;
-            color: white;
-            border: none;
-            padding: 7px 12px;
-            border-radius: 6px;
-            font-weight: bold;
-            cursor: pointer;
-            font-size: 12px;
-        }
-        .upgrade-btn:disabled { background: #444; cursor: not-allowed; }
-
-        .progress-bar-bg {
-            background: #0d0e12;
-            border-radius: 10px;
-            height: 14px;
-            width: 100%;
-            overflow: hidden;
-            margin-top: 6px;
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-        .progress-bar-fill {
-            background: linear-gradient(90deg, #8e44ad, #9b59b6);
-            height: 100%;
-            width: 0%;
-            transition: width 0.3s ease;
+            justify-content: space-between;
+            box-shadow: 0 0 20px rgba(245, 158, 11, 0.4);
+            color: #000;
+            margin-top: 10px;
         }
 
-        /* Estilos del Minijuego Runner */
-        #game-canvas {
-            background: #0b0d12;
-            border-radius: 12px;
-            border: 1px solid rgba(255,255,255,0.1);
-            display: block;
-            margin: 0 auto 10px auto;
-            width: 100%;
-            max-width: 320px;
-            height: 160px;
+        .gold-amount {
+            font-size: 22px;
+            font-weight: 900;
         }
-        .runner-controls {
+
+        .gold-usd {
+            font-size: 11px;
+            opacity: 0.8;
+            font-weight: 600;
+        }
+
+        /* --- 3. GRID DE ACCIONES (4 CARDS) --- */
+        .action-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            padding: 0 16px;
+            margin-top: 15px;
+        }
+
+        .action-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 12px 6px;
             display: flex;
-            gap: 10px;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            cursor: pointer;
         }
 
-        #ton-connect-btn { display: flex; justify-content: center; margin-top: 8px; }
+        .action-title {
+            font-size: 9px;
+            color: var(--text-sub);
+            font-weight: 800;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+
+        .action-icon {
+            font-size: 26px;
+            margin-bottom: 4px;
+        }
+
+        .action-val {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--accent-cyan);
+        }
+
+        /* --- 4. BARRA DE NAVEGACIÓN INFERIOR --- */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(10, 14, 26, 0.92);
+            backdrop-filter: blur(15px);
+            border-top: 1px solid var(--card-border);
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+            z-index: 100;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            color: var(--text-sub);
+            font-size: 10px;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .nav-item.active {
+            color: var(--accent-cyan);
+        }
+
+        .nav-icon {
+            font-size: 20px;
+        }
     </style>
 </head>
 <body>
 
-    <h1>⛏️ Crypto Miner Game</h1>
-
-    <!-- Balance General -->
-    <div class="currency-box">
-        <div class="currency coins">🪙 <span id="txt-monedas">0.000</span></div>
-        <div class="currency emeralds">💎 <span id="txt-esmeraldas">0.00</span></div>
-        <div class="currency ton">💎 <span id="txt-deposito-esmeraldas">0</span> Dep.</div>
-    </div>
-
-    <!-- Panel de Minado con Moneda 3D -->
-    <div class="status-card" id="main-click-area">
-        <div><strong>Estado:</strong> <span id="txt-estado" style="color: #2ecc71;">Minando...</span></div>
-        <div style="font-size: 12px; color: #aaa; margin-top: 2px;">
-            Sin reclamar: <span id="txt-unclaimed">0.0000</span> / <span id="txt-max-unclaimed">0.600</span> 🪙
+    <!-- 1. HEADER (Perfil y Marcadores) -->
+    <header class="top-header">
+        <div class="user-bar">
+            <div class="profile-info">
+                <img id="user-avatar" src="https://via.placeholder.com/40" class="avatar" alt="User">
+                <div class="user-details">
+                    <span id="user-name" class="username">Cargando...</span>
+                    <span class="level-badge">LVL <span id="user-level">1</span></span>
+                </div>
+            </div>
+            <!-- Botón TON Connect integrado -->
+            <div id="ton-connect-button"></div>
         </div>
 
-        <div class="click-target-wrapper">
-            <div class="glow-effect"></div>
-            <div class="click-target" id="btn-roca-click" onclick="golpeManual(event)">
-                💎
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-left">
+                    <span class="stat-icon">💵</span>
+                    <div>
+                        <div class="stat-title">CASH</div>
+                        <div class="stat-value" id="val-cash">$0.00</div>
+                    </div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-left">
+                    <span class="stat-icon">💎</span>
+                    <div>
+                        <div class="stat-title">GEMS</div>
+                        <div class="stat-value" id="val-gems">0</div>
+                    </div>
+                </div>
             </div>
         </div>
+    </header>
 
-        <button class="btn-action" onclick="reclamar()">📥 Reclamar Monedas</button>
-    </div>
-
-    <!-- Navegación por Pestañas -->
-    <div class="tab-container">
-        <button class="tab-btn active" id="btn-tab-minar" onclick="navegar('minar')">⛏️ Minar</button>
-        <button class="tab-btn" id="btn-tab-juego" onclick="navegar('juego')">🏃 Minijuego</button>
-        <button class="tab-btn" id="btn-tab-temporada" onclick="navegar('temporada')">🍂 Tienda</button>
-        <button class="tab-btn" id="btn-tab-vip" onclick="navegar('vip')">💎 VIP</button>
-        <button class="tab-btn" id="btn-tab-tareas" onclick="navegar('tareas')">📋 Tareas</button>
-        <button class="tab-btn" id="btn-tab-referidos" onclick="navegar('referidos')">👥 Amigos</button>
-        <button class="tab-btn" id="btn-tab-perfil" onclick="navegar('perfil')">👤 Perfil</button>
-    </div>
-
-    <!-- VISTA PRINCIPAL (Para ocultar/mostrar si estás en el juego) -->
-    <div id="wrapper-principal"></div>
-
-    <!-- APARTADO DEL MINIJUEGO RUNNER -->
-    <div id="page-juego" class="section-page">
-        <h2>🏃 Minijuego: Carrera en la Mina</h2>
-        <div style="font-size:11px; color:#aaa; margin-bottom:8px; text-align:center;">
-            ¡Esquiva los obstáculos y llega a las rocas para minar oro y XP extra!
-        </div>
-        
-        <canvas id="game-canvas" width="320" height="160"></canvas>
-        
-        <div style="text-align:center; font-weight:bold; margin-bottom:8px; font-size:13px; color:#f39c12;" id="txt-estado-juego">
-            Estado: Corriendo...
+    <!-- 2. ÁREA CENTRAL (Máquina Minera + Saldo Principal) -->
+    <main class="main-stage">
+        <div class="rig-container" id="tap-rig">
+            <div class="rig-glow"></div>
+            <!-- Sustituye 'rig_machine.png' por la ruta de tu imagen generada -->
+            <img src="rig_machine.png" alt="Mining Rig" class="rig-image" onerror="this.src='https://i.postimg.cc/m2D2Z1Wz/dwarf-run.gif'">
         </div>
 
-        <div class="runner-controls">
-            <button class="btn-action" style="background:#3498db; margin-top:0;" onclick="saltarEnano()">⬆️ Saltar Obstáculo</button>
-            <button class="btn-action" style="background:#2ecc71; color:#000; margin-top:0;" id="btn-minar-veta" onclick="minarVeta()" disabled>⛏️ Minar Veta</button>
-        </div>
-        <button class="btn-action" style="background:#e74c3c; margin-top:8px;" onclick="reiniciarJuegoRunner()">🔄 Reiniciar Carrera</button>
-    </div>
-
-    <!-- TIENDA TEMPORADA -->
-    <div id="page-temporada" class="section-page">
-        <h2>🍂 Tienda de Temporada (Monedas 🪙)</h2>
-        <div id="lista-temporada"></div>
-    </div>
-
-    <!-- TIENDA VIP -->
-    <div id="page-vip" class="section-page">
-        <h2>💎 Tienda VIP (Esmeraldas 💎)</h2>
-        <div id="lista-vip"></div>
-    </div>
-
-    <!-- TAREAS Y MISIONES -->
-    <div id="page-tareas" class="section-page">
-        <h2>📋 Tareas Comunitarias</h2>
-        <div id="lista-tareas"></div>
-    </div>
-
-    <!-- REFERIDOS -->
-    <div id="page-referidos" class="section-page">
-        <h2>👥 Invita Amigos y Gana</h2>
-        <div style="background:#1e2430; padding:12px; border-radius:10px; text-align:center;">
-            <p style="font-size:13px; margin-top:0;">Gana <strong>+25 🪙</strong> y <strong>+50 XP</strong> por cada amigo que se una.</p>
-            <div style="font-size:14px; font-weight:bold; color:#f39c12; margin:10px 0;">
-                Invitados: <span id="txt-referidos-count">0</span>
+        <!-- Banner Dorado -->
+        <div class="gold-banner">
+            <div>
+                <div class="gold-amount" id="mined-coins">0.000000</div>
+                <div class="gold-usd">≈ $<span id="mined-usd">0.00</span> USD</div>
             </div>
-            <button class="btn-action" style="background:#f39c12; color:#000;" onclick="copiarLinkReferido()">🔗 Copiar Enlace</button>
+            <span style="font-size: 28px;">⚡</span>
         </div>
-    </div>
+    </main>
 
-    <!-- PERFIL Y WALLET -->
-    <div id="page-perfil" class="section-page">
-        <h2>👤 Perfil del Jugador</h2>
-        <div style="background:#1e2430; padding:10px; border-radius:10px; margin-bottom:10px;">
-            <div><strong>Nivel actual:</strong> <span id="txt-nivel" style="color:#f39c12; font-weight:bold;">1</span> / 50</div>
-            <div style="font-size:12px; color:#ccc; margin-top:3px;">XP: <span id="txt-xp">0</span> / <span id="txt-xp-max">100</span></div>
-            <div class="progress-bar-bg">
-                <div class="progress-bar-fill" id="bar-xp"></div>
-            </div>
-            <div style="font-size:11px; color:#aaa; margin-top:5px;">💡 Ganarás +0.05 Esmeraldas 💎 por nivel.</div>
+    <!-- 3. TARJETAS DE ACCIÓN DE TEMPORADA -->
+    <section class="action-grid">
+        <div class="action-card" onclick="alert('¡Bono diario reclamado!')">
+            <span class="action-title">Bono Diario</span>
+            <span class="action-icon">📅</span>
+            <span class="action-val">24:00</span>
         </div>
-
-        <h2>🎁 Bono Diario</h2>
-        <div style="background:#1e2430; padding:10px; border-radius:10px; margin-bottom:10px;">
-            <div style="font-size:12px; color:#ccc;">Recompensa: 1-10 Monedas 🪙 + 20 XP</div>
-            <button class="btn-action" style="background:#9b59b6;" id="btn-bono" onclick="reclamarBonoDiario()">🎁 Reclamar Bono</button>
-            <div style="font-size:11px; color:#e67e22; margin-top:4px;" id="txt-timer-bono"></div>
+        <div class="action-card" onclick="alert('Boost 4x activado')">
+            <span class="action-title">Boost</span>
+            <span class="action-icon">🚀</span>
+            <span class="action-val">4x</span>
         </div>
-
-        <h2>🏦 Intercambio</h2>
-        <div style="background:#1e2430; padding:10px; border-radius:10px; margin-bottom:10px;">
-            <div style="font-size:12px; color:#ccc;">500 Monedas 🪙 = 1 Esmeralda 💎</div>
-            <button class="btn-action" style="background:#2ecc71; color:#000;" onclick="canjearEsmeralda()">Canjear 500 🪙 por 1 💎</button>
+        <div class="action-card" onclick="alert('Misiones de temporada')">
+            <span class="action-title">Misiones</span>
+            <span class="action-icon">📋</span>
+            <span class="action-val">24d 16h</span>
         </div>
-
-        <h2>💎 Conexión TON Wallet</h2>
-        <div style="background:#1e2430; padding:10px; border-radius:10px;">
-            <div style="font-size:11px; color:#aaa;" id="txt-info-retiro">Sin depósito de 3 💎: Retiro máx 0.0003 TON</div>
-            <div id="ton-connect-btn"></div>
-            <button class="btn-action" style="background:#8e44ad; margin-top:8px;" onclick="depositarEsmeraldas()">➕ Depositar 3 Esmeraldas</button>
+        <div class="action-card" onclick="alert('Tienda ABIERTA')">
+            <span class="action-title">Tienda</span>
+            <span class="action-icon">📦</span>
+            <span class="action-val">Exclusivo</span>
         </div>
-    </div>
+    </section>
 
+    <!-- 4. BARRA DE NAVEGACIÓN INFERIOR -->
+    <nav class="bottom-nav">
+        <div class="nav-item active">
+            <span class="nav-icon">🏠</span>
+            <span>Inicio</span>
+        </div>
+        <div class="nav-item" onclick="alert('Sección Mineros')">
+            <span class="nav-icon">📻</span>
+            <span>Mineros</span>
+        </div>
+        <div class="nav-item" onclick="alert('Sección Tareas')">
+            <span class="nav-icon">📝</span>
+            <span>Tareas</span>
+        </div>
+        <div class="nav-item" onclick="alert('Sección Amigos')">
+            <span class="nav-icon">👥</span>
+            <span>Amigos</span>
+        </div>
+        <div class="nav-item" onclick="solicitarRetiroTon()">
+            <span class="nav-icon">👛</span>
+            <span>Cartera</span>
+        </div>
+    </nav>
+
+    <!-- LÓGICA DEL JUEGO -->
     <script>
-        let tg = window.Telegram.WebApp;
-        tg.expand();
+        // Inicialización de Telegram SDK
+        const tg = window.Telegram?.WebApp;
+        if (tg) {
+            tg.expand();
+            if (tg.initDataUnsafe?.user) {
+                document.getElementById('user-name').innerText = tg.initDataUnsafe.user.first_name || "Miner";
+                if(tg.initDataUnsafe.user.photo_url) {
+                    document.getElementById('user-avatar').src = tg.initDataUnsafe.user.photo_url;
+                }
+            }
+        }
 
+        // Inicialización de Tonkeeper (TonConnect UI)
         const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
             manifestUrl: 'https://raw.githubusercontent.com/ton-community/ton-connect-manifest/main/tonconnect-manifest.json',
-            buttonRootId: 'ton-connect-btn'
+            buttonRootId: 'ton-connect-button'
         });
 
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        function playSound(freq, duration) {
-            try {
-                let osc = audioCtx.createOscillator();
-                let gain = audioCtx.createGain();
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-                osc.frequency.value = freq;
-                gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
-                osc.start();
-                osc.stop(audioCtx.currentTime + duration);
-            } catch(e){}
-        }
+        // Estado del Juego
+        let saldoMinado = 1531.470673;
+        let cash = 0.2295;
+        let gems = 0;
 
-        let monedas = parseFloat(localStorage.getItem('monedas')) || 0;
-        let esmeraldas = parseFloat(localStorage.getItem('esmeraldas')) || 0;
-        let esmeraldasDepositadas = parseInt(localStorage.getItem('esmeraldasDepositadas')) || 0;
-        let lastClaim = parseInt(localStorage.getItem('lastClaim')) || Date.now();
-        
-        let nivel = parseInt(localStorage.getItem('nivel')) || 1;
-        let xp = parseInt(localStorage.getItem('xp')) || 0;
-        let lastBono = parseInt(localStorage.getItem('lastBono')) || 0;
-        let referidos = parseInt(localStorage.getItem('referidos')) || 0;
+        const elMinedCoins = document.getElementById('mined-coins');
+        const elMinedUsd = document.getElementById('mined-usd');
+        const elTapRig = document.getElementById('tap-rig');
 
-        let mejorasTemp = JSON.parse(localStorage.getItem('mejorasTemp')) || { pico: 0, habilidad: 0, salud: 0, cansancio: 0, fuerza: 0 };
-        let mejorasVIP = JSON.parse(localStorage.getItem('mejorasVIP')) || { pico: 1, habilidad: 1, salud: 1, cansancio: 1, fuerza: 1 };
-        let tareasCompletadas = JSON.parse(localStorage.getItem('tareasCompletadas')) || {};
+        // Bucle de Minado Automático Pasivo
+        setInterval(() => {
+            saldoMinado += 0.000150;
+            elMinedCoins.innerText = saldoMinado.toFixed(6);
+            elMinedUsd.innerText = (saldoMinado * 0.00001).toFixed(4);
+        }, 1000);
 
-        const nombresMejoras = { pico: "⛏️ Pico", habilidad: "⚡ Habilidad", salud: "❤️ Salud", cansancio: "💤 Cansancio", fuerza: "💪 Fuerza" };
+        // Tap en la Máquina con Efecto de Partícula (+1)
+        elTapRig.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            saldoMinado += 0.01;
+            elMinedCoins.innerText = saldoMinado.toFixed(6);
 
-        const listaTareas = [
-            { id: "tg_channel", nombre: "Unirse al Canal de Telegram", recompensa: 100, xp: 50, link: "https://t.me/telegram" },
-            { id: "x_follow", nombre: "Seguir en Twitter / X", recompensa: 100, xp: 50, link: "https://x.com" }
-        ];
+            // Crear animación de texto flotante
+            const touch = e.touches[0];
+            const particle = document.createElement('div');
+            particle.className = 'click-particle';
+            particle.innerText = '+0.01';
+            particle.style.left = `${touch.clientX - 20}px`;
+            particle.style.top = `${touch.clientY - 40}px`;
+            document.body.appendChild(particle);
 
-        function guardar() {
-            localStorage.setItem('monedas', monedas);
-            localStorage.setItem('esmeraldas', esmeraldas);
-            localStorage.setItem('esmeraldasDepositadas', esmeraldasDepositadas);
-            localStorage.setItem('lastClaim', lastClaim);
-            localStorage.setItem('nivel', nivel);
-            localStorage.setItem('xp', xp);
-            localStorage.setItem('lastBono', lastBono);
-            localStorage.setItem('referidos', referidos);
-            localStorage.setItem('mejorasTemp', JSON.stringify(mejorasTemp));
-            localStorage.setItem('mejorasVIP', JSON.stringify(mejorasVIP));
-            localStorage.setItem('tareasCompletadas', JSON.stringify(tareasCompletadas));
-        }
+            setTimeout(() => particle.remove(), 800);
+        });
 
-        function obtenerXPNecesaria(lvl) {
-            if (lvl === 1) return 100;
-            if (lvl === 2) return 200;
-            let xpReq = 200;
-            for (let i = 3; i <= lvl; i++) {
-                if (i <= 10) xpReq += 50;
-                else if (i <= 20) xpReq += 100;
-                else if (i <= 30) xpReq += 150;
-                else if (i <= 50) xpReq += 200;
+        // Petición de Retiro a Tonkeeper
+        async function solicitarRetiroTon() {
+            if (!tonConnectUI.connected) {
+                alert("Por favor, conecta tu billetera Tonkeeper arriba a la derecha.");
+                return;
             }
-            return xpReq;
+            const walletAddress = tonConnectUI.account.address;
+            alert(`Solicitando retiro automático para la wallet:\n${walletAddress}`);
         }
-
-        function agregarXP(cantidad) {
-            if (nivel >= 50) return;
-            xp += cantidad;
-            let xpReq = obtenerXPNecesaria(nivel);
-            while (xp >= xpReq && nivel < 50) {
-                xp -= xpReq;
-                nivel++;
-                esmeraldas += 0.05;
-                alert(`🎉 ¡Subiste al Nivel ${nivel}! Ganas +0.05 Esmeraldas 💎`);
-                xpReq = obtenerXPNecesaria(nivel);
-            }
-            guardar();
-        }
-
-        function calcularTasa() {
-            let bonusPico = (mejorasVIP.pico - 1) * 0.2 + (mejorasTemp.pico * 0.05);
-            let bonusFuerza = (mejorasVIP.fuerza - 1) * 0.1 + (mejorasTemp.fuerza * 0.03);
-            return (1 / 18000) * (1 + bonusPico) * (1 + bonusFuerza);
-        }
-
-        function obtenerMaxHoras() {
-            return 3 + (mejorasVIP.cansancio - 1) * 0.5 + (mejorasTemp.cansancio * 0.2);
-        }
-
-        function actualizarJuego() {
-            let ahora = Date.now();
-            let segundosTranscurridos = (ahora - lastClaim) / 1000;
-            let maxSegundos = obtenerMaxHoras() * 3600;
-
-            let minando = true;
-            if (segundosTranscurridos >= maxSegundos) {
-                segundosTranscurridos = maxSegundos;
-                minando = false;
-            }
-
-            let sinReclamar = segundosTranscurridos * calcularTasa();
-            let maxSinReclamar = maxSegundos * calcularTasa();
-
-            document.getElementById('txt-monedas').innerText = monedas.toFixed(3);
-            document.getElementById('txt-esmeraldas').innerText = esmeraldas.toFixed(2);
-            document.getElementById('txt-deposito-esmeraldas').innerText = esmeraldasDepositadas;
-            document.getElementById('txt-unclaimed').innerText = sinReclamar.toFixed(4);
-            document.getElementById('txt-max-unclaimed').innerText = maxSinReclamar.toFixed(3);
-            document.getElementById('txt-referidos-count').innerText = referidos;
-
-            let txtEstado = document.getElementById('txt-estado');
-            let targetClick = document.getElementById('btn-roca-click');
-
-            if (minando) {
-                txtEstado.innerText = "Minando...";
-                txtEstado.style.color = "#2ecc71";
-                targetClick.style.opacity = "1";
-            } else {
-                txtEstado.innerText = "😴 Minero Cansado (Reclama para reactivar)";
-                txtEstado.style.color = "#e74c3c";
-                targetClick.style.opacity = "0.6";
-            }
-
-            let xpReq = obtenerXPNecesaria(nivel);
-            document.getElementById('txt-nivel').innerText = nivel;
-            document.getElementById('txt-xp').innerText = xp;
-            document.getElementById('txt-xp-max').innerText = nivel >= 50 ? "MAX" : xpReq;
-            let porcentaje = nivel >= 50 ? 100 : Math.min(100, (xp / xpReq) * 100);
-            document.getElementById('bar-xp').style.width = porcentaje + "%";
-
-            let btnBono = document.getElementById('btn-bono');
-            let txtTimerBono = document.getElementById('txt-timer-bono');
-            let horasDesdeBono = (ahora - lastBono) / (1000 * 3600);
-
-            if (horasDesdeBono >= 24) {
-                btnBono.disabled = false;
-                txtTimerBono.innerText = "¡Bono disponible!";
-            } else {
-                btnBono.disabled = true;
-                txtTimerBono.innerText = `Disponible en aprox. ${Math.ceil(24 - horasDesdeBono)}h`;
-            }
-
-            let infoRetiro = document.getElementById('txt-info-retiro');
-            if (esmeraldasDepositadas >= 3) {
-                infoRetiro.innerText = "✅ Depósito verificado. Retiros sin límites.";
-                infoRetiro.style.color = "#2ecc71";
-            } else {
-                infoRetiro.innerText = `⚠️ Límite actual sin depósito (3 💎): Máx 0.0003 TON (${esmeraldasDepositadas}/3 💎)`;
-                infoRetiro.style.color = "#e67e22";
-            }
-
-            renderizarTiendas();
-            renderizarTareas();
-        }
-
-        function navegar(tab) {
-            document.querySelectorAll('.section-page').forEach(p => p.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            
-            // Ocultar o mostrar panel de minado principal según la pestaña
-            let mainCard = document.getElementById('main-click-area');
-            if (tab === 'minar') {
-                mainCard.style.display = 'block';
-                document.getElementById('btn-tab-minar').classList.add('active');
-            } else {
-                mainCard.style.display = 'none';
-                if (tab !== 'minar' && document.getElementById(`page-${tab}`)) {
-                    document.getElementById(`page-${tab}`).classList.add('active');
-                    document.getElementById(`btn-tab-${tab}`).classList.add('active');
-                }
-            }
-        }
-
-        function renderizarTiendas() {
-            let htmlTemp = "";
-            for (let key in mejorasTemp) {
-                let grado = mejorasTemp[key];
-                let costo = 100 + (grado * 50);
-                let maxed = grado >= 5;
-
-                htmlTemp += `
-                    <div class="upgrade-item">
-                        <div><strong>${nombresMejoras[key]} (G. ${grado}/5)</strong></div>
-                        <button class="upgrade-btn" onclick="comprarTemporada('${key}')" ${maxed ? 'disabled' : ''}>
-                            ${maxed ? 'MAX' : costo + ' 🪙'}
-                        </button>
-                    </div>
-                `;
-            }
-            document.getElementById('lista-temporada').innerHTML = htmlTemp;
-
-            let htmlVIP = "";
-            for (let key in mejorasVIP) {
-                let lvl = mejorasVIP[key];
-                let costo = lvl * 2;
-
-                htmlVIP += `
-                    <div class="upgrade-item">
-                        <div><strong>${nombresMejoras[key]} (Niv. ${lvl})</strong></div>
-                        <button class="upgrade-btn" style="background:#8e44ad;" onclick="comprarVIP('${key}')">
-                            ${costo} 💎
-                        </button>
-                    </div>
-                `;
-            }
-            document.getElementById('lista-vip').innerHTML = htmlVIP;
-        }
-
-        function renderizarTareas() {
-            let html = "";
-            listaTareas.forEach(t => {
-                let completada = tareasCompletadas[t.id];
-                html += `
-                    <div class="task-item">
-                        <div>
-                            <strong>${t.nombre}</strong>
-                            <div style="font-size:11px; color:#2ecc71;">+${t.recompensa} 🪙 | +${t.xp} XP</div>
-                        </div>
-                        <button class="upgrade-btn" style="background:${completada ? '#444' : '#3498db'};" 
-                            onclick="hacerTarea('${t.id}', '${t.link}', ${t.recompensa}, ${t.xp})" ${completada ? 'disabled' : ''}>
-                            ${completada ? '✅ Lista' : 'Ir'}
-                        </button>
-                    </div>
-                `;
-            });
-            document.getElementById('lista-tareas').innerHTML = html;
-        }
-
-        function hacerTarea(id, link, recompensa, xpBonus) {
-            window.open(link, '_blank');
-            setTimeout(() => {
-                if (!tareasCompletadas[id]) {
-                    tareasCompletadas[id] = true;
-                    monedas += recompensa;
-                    agregarXP(xpBonus);
-                    guardar();
-                    actualizarJuego();
-                    playSound(600, 0.2);
-                    alert(`¡Tarea completada!\n+${recompensa} Monedas 🪙\n+${xpBonus} XP ⭐`);
-                }
-            }, 2000);
-        }
-
-        function copiarLinkReferido() {
-            let userId = tg.initDataUnsafe?.user?.id || "player";
-            let link = `https://t.me/TuBot?start=${userId}`;
-            navigator.clipboard.writeText(link);
-            alert("¡Enlace copiado al portapapeles!");
-        }
-
-        function golpeManual(e) {
-            let ganancia = (0.001 * mejorasVIP.habilidad + mejorasTemp.habilidad * 0.0005);
-            monedas += ganancia;
-            guardar();
-            actualizarJuego();
-            playSound(520, 0.04);
-            if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
-
-            let pop = document.createElement('div');
-            pop.className = 'click-pop';
-            pop.innerText = `+${ganancia.toFixed(4)}`;
-            
-            let container = document.getElementById('main-click-area');
-            let rect = container.getBoundingClientRect();
-            let x = e.clientX ? (e.clientX - rect.left) : (rect.width / 2);
-            let y = e.clientY ? (e.clientY - rect.top) : (rect.height / 2);
-
-            pop.style.left = `${x - 20}px`;
-            pop.style.top = `${y - 20}px`;
-            container.appendChild(pop);
-            setTimeout(() => pop.remove(), 700);
-        }
-
-        function reclamarBonoDiario() {
-            let ahora = Date.now();
-            if ((ahora - lastBono) / (1000 * 3600) >= 24) {
-                let bonoMonedas = Math.floor(Math.random() * 10) + 1;
-                monedas += bonoMonedas;
-                lastBono = ahora;
-                agregarXP(20);
-                guardar();
-                actualizarJuego();
-                playSound(800, 0.3);
-                alert(`🎁 ¡Bono Reclamado!\n+${bonoMonedas} Monedas 🪙\n+20 XP ⭐`);
-            }
-        }
-
-        function comprarTemporada(tipo) {
-            let grado = mejorasTemp[tipo];
-            if (grado >= 5) return;
-            let costo = 100 + (grado * 50);
-            if (monedas >= costo) {
-                monedas -= costo;
-                mejorasTemp[tipo]++;
-                guardar();
-                actualizarJuego();
-                playSound(500, 0.1);
-            } else alert(`Necesitas ${costo} monedas.`);
-        }
-
-        function comprarVIP(tipo) {
-            let lvl = mejorasVIP[tipo];
-            let costo = lvl * 2;
-            if (esmeraldas >= costo) {
-                esmeraldas -= costo;
-                mejorasVIP[tipo]++;
-                guardar();
-                actualizarJuego();
-                playSound(700, 0.1);
-            } else alert(`Necesitas ${costo} Esmeraldas 💎.`);
-        }
-
-        function canjearEsmeralda() {
-            if (monedas >= 500) {
-                monedas -= 500;
-                esmeraldas += 1;
-                guardar();
-                actualizarJuego();
-                alert("¡Canjeaste 500 monedas por 1 Esmeralda 💎!");
-            } else alert("Necesitas al menos 500 monedas.");
-        }
-
-        function reclamar() {
-            let ahora = Date.now();
-            let segundosTranscurridos = (ahora - lastClaim) / 1000;
-            let maxSegundos = obtenerMaxHoras() * 3600;
-            if (segundosTranscurridos > maxSegundos) segundosTranscurridos = maxSegundos;
-
-            monedas += segundosTranscurridos * calcularTasa();
-            lastClaim = ahora;
-            guardar();
-            actualizarJuego();
-            playSound(600, 0.2);
-        }
-
-        function depositarEsmeraldas() {
-            esmeraldasDepositadas += 3;
-            esmeraldas += 3;
-            guardar();
-            actualizarJuego();
-            alert("¡Has registrado un depósito de 3 Esmeraldas 💎!");
-        }
-
-        // ==========================================
-        // LÓGICA DEL MINIJUEGO RUNNER (ENANO Y ROCAS)
-        // ==========================================
-        const canvas = document.getElementById('game-canvas');
-        const ctx = canvas.getContext('2d');
-
-        let enano = { x: 40, y: 110, w: 24, h: 30, vy: 0, gravity: 0.6, jumping: false };
-        let obstaculo = { x: 350, y: 115, w: 20, h: 25, speed: 3, tipo: 'roca' }; // 'roca' u 'obstaculo'
-        let juegoActivo = true;
-        let detenidoParaMinar = false;
-
-        function saltarEnano() {
-            if (!enano.jumping && juegoActivo && !detenidoParaMinar) {
-                enano.vy = -9;
-                enano.jumping = true;
-                playSound(400, 0.1);
-            }
-        }
-
-        function minarVeta() {
-            if (detenidoParaMinar) {
-                monedas += 5;
-                agregarXP(15);
-                guardar();
-                actualizarJuego();
-                playSound(900, 0.3);
-                alert("⛏️ ¡Veta minada con éxito!\n+5 🪙 y +15 XP ⭐");
-                detenidoParaMinar = false;
-                document.getElementById('btn-minar-veta').disabled = true;
-                document.getElementById('txt-estado-juego').innerText = "Estado: Corriendo...";
-                obstaculo.x = 350; // Continuar juego
-            }
-        }
-
-        function reiniciarJuegoRunner() {
-            juegoActivo = true;
-            detenidoParaMinar = false;
-            enano.y = 110;
-            enano.vy = 0;
-            enano.jumping = false;
-            obstaculo.x = 350;
-            obstaculo.tipo = 'obstaculo';
-            document.getElementById('btn-minar-veta').disabled = true;
-            document.getElementById('txt-estado-juego').innerText = "Estado: Corriendo...";
-        }
-
-        function actualizarRunner() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            // Dibujar Fondo (Cueva)
-            ctx.fillStyle = "#161a23";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            // Suelo
-            ctx.fillStyle = "#2c3e50";
-            ctx.fillRect(0, 140, canvas.width, 20);
-
-            if (juegoActivo && !detenidoParaMinar) {
-                // Física del enano
-                enano.vy += enano.gravity;
-                enano.y += enano.vy;
-                if (enano.y > 110) {
-                    enano.y = 110;
-                    enano.vy = 0;
-                    enano.jumping = false;
-                }
-
-                // Mover obstáculo / veta
-                obstaculo.x -= obstaculo.speed;
-
-                // Si llega al borde y es veta minable
-                if (obstaculo.x < 60 && obstaculo.x > 30 && obstaculo.tipo === 'veta') {
-                    detenidoParaMinar = true;
-                    document.getElementById('btn-minar-veta').disabled = false;
-                    document.getElementById('txt-estado-juego').innerText = "🛑 ¡Veta alcanzada! Presiona Minar";
-                }
-
-                // Colisión con obstáculo normal
-                if (obstaculo.x < enano.x + enano.w && obstaculo.x + obstaculo.w > enano.x && obstaculo.y < enano.y + enano.h) {
-                    if (obstaculo.tipo === 'obstaculo') {
-                        juegoActivo = false;
-                        document.getElementById('txt-estado-juego').innerText = "💥 ¡Te tropezaste! Reinicia";
-                    }
-                }
-
-                // Reaparecer obstáculo o veta aleatoria
-                if (obstaculo.x < -30) {
-                    obstaculo.x = 350;
-                    obstaculo.tipo = Math.random() > 0.5 ? 'obstaculo' : 'veta';
-                }
-            }
-
-            // Dibujar Enano
-            ctx.fillStyle = "#f39c12";
-            ctx.fillRect(enano.x, enano.y, enano.w, enano.h);
-            ctx.fillStyle = "#fff";
-            ctx.fillRect(enano.x + 14, enano.y + 6, 6, 6); // Ojo
-
-            // Dibujar Obstáculo o Veta Minable
-            if (obstaculo.tipo === 'obstaculo') {
-                ctx.fillStyle = "#e74c3c"; // Roca peligrosa roja
-                ctx.beginPath();
-                ctx.arc(obstaculo.x + 10, obstaculo.y + 12, 12, 0, Math.PI * 2);
-                ctx.fill();
-            } else {
-                ctx.fillStyle = "#00f2fe"; // Veta brillante de cristal/piedras preciosas
-                ctx.fillRect(obstaculo.x, obstaculo.y - 5, 22, 30);
-            }
-
-            requestAnimationFrame(actualizarRunner);
-        }
-
-        // Iniciar loop del runner
-        requestAnimationFrame(actualizarRunner);
-
-        setInterval(actualizarJuego, 1000);
-        actualizarJuego();
     </script>
 </body>
     </html>
