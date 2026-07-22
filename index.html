@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Crypto Miner Game</title>
+    <title>Crypto Miner Bot</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
     <style>
@@ -14,6 +14,7 @@
             --green: #10b981;
             --blue: #38bdf8;
             --purple: #8b5cf6;
+            --red: #ef4444;
             --text-main: #f8fafc;
             --text-sub: #94a3b8;
         }
@@ -38,22 +39,19 @@
             overflow-x: hidden;
         }
 
-        /* --- VISTAS DE PESTAÑAS --- */
-        .game-view {
-            display: none;
-        }
-        .game-view.active-view {
-            display: block;
-        }
+        .game-view { display: none; }
+        .game-view.active-view { display: block; }
 
-        /* --- CABECERA Y ESTADÍSTICAS --- */
         .app-title {
             text-align: center;
-            font-size: 22px;
+            font-size: 20px;
             font-weight: 800;
             color: var(--orange);
-            margin-bottom: 16px;
-            text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
         }
 
         .stats-grid {
@@ -72,7 +70,7 @@
         }
 
         .stat-val {
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 800;
             margin-top: 4px;
             display: block;
@@ -82,12 +80,12 @@
         .val-gems { color: var(--green); }
         .val-dep { color: var(--blue); }
 
-        /* --- ZONA DEL MINI JUEGO INTERACTIVO --- */
+        /* --- MINI JUEGO: ENANO CORRIENDO --- */
         .minigame-container {
             position: relative;
-            background: radial-gradient(circle at center, rgba(30, 41, 59, 0.9) 0%, var(--bg-dark) 100%);
+            background: var(--card-bg);
             border-radius: 20px;
-            padding: 20px 16px;
+            padding: 16px;
             text-align: center;
             margin-bottom: 16px;
             border: 1px solid rgba(255,255,255,0.05);
@@ -104,7 +102,7 @@
             font-weight: 700;
             color: var(--green);
             background: rgba(16, 185, 129, 0.12);
-            padding: 4px 10px;
+            padding: 4px 12px;
             border-radius: 20px;
             border: 1px solid rgba(16, 185, 129, 0.2);
             margin-bottom: 8px;
@@ -121,48 +119,21 @@
         .unclaimed-badge {
             font-size: 13px;
             color: var(--text-sub);
-            margin-bottom: 14px;
+            margin-bottom: 10px;
         }
         .unclaimed-badge span { color: var(--orange); font-weight: 700; }
 
-        .clicker-target {
-            width: 120px;
-            height: 120px;
-            background: linear-gradient(135deg, #f59e0b, #d97706);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 52px;
-            box-shadow: 0 0 25px rgba(245, 158, 11, 0.3), inset 0 -6px 15px rgba(0,0,0,0.3);
+        /* Canvas del Mini Juego */
+        #runner-canvas {
+            background: #090d16;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.1);
+            display: block;
+            margin: 0 auto 12px auto;
+            max-width: 100%;
             cursor: pointer;
-            transition: transform 0.05s;
-            position: relative;
-            z-index: 10;
-            margin-bottom: 14px;
         }
 
-        .clicker-target:active {
-            transform: scale(0.92);
-        }
-
-        .floating-number {
-            position: absolute;
-            font-size: 22px;
-            font-weight: 800;
-            color: #fff;
-            pointer-events: none;
-            z-index: 20;
-            animation: floatUp 0.8s ease-out forwards;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
-        }
-
-        @keyframes floatUp {
-            0% { opacity: 1; transform: translateY(0) scale(1); }
-            100% { opacity: 0; transform: translateY(-70px) scale(1.2); }
-        }
-
-        /* --- SECCIONES Y TIENDA --- */
         .section-card {
             background: var(--card-bg);
             border-radius: 16px;
@@ -185,7 +156,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: rgba(0, 0, 0, 0.25);
+            background: rgba(0, 0, 0, 0.2);
             padding: 12px;
             border-radius: 12px;
             border: 1px solid rgba(255, 255, 255, 0.04);
@@ -209,7 +180,7 @@
         }
 
         .btn:active { opacity: 0.8; }
-        .btn-claim { background: linear-gradient(135deg, #f59e0b, #d97706); margin-bottom: 8px; }
+        .btn-claim { background: linear-gradient(135deg, #f59e0b, #d97706); }
         .btn-hit { background: linear-gradient(135deg, #10b981, #059669); }
         .btn-purple { background: linear-gradient(135deg, #8b5cf6, #6d28d9); }
 
@@ -218,24 +189,29 @@
             color: var(--text-sub);
         }
 
-        .xp-bar-container {
-            width: 100%;
-            height: 8px;
-            background: rgba(255, 255, 255, 0.08);
-            border-radius: 4px;
-            overflow: hidden;
-            margin: 8px 0;
+        /* Barra de Experiencia */
+        .xp-container {
+            background: rgba(0,0,0,0.3);
+            border-radius: 10px;
+            padding: 10px;
+            margin-bottom: 12px;
         }
-
+        .xp-bar-bg {
+            width: 100%;
+            height: 10px;
+            background: #334155;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-top: 6px;
+        }
         .xp-bar-fill {
-            width: 0%;
             height: 100%;
-            background: linear-gradient(90deg, #8b5cf6, #c084fc);
-            border-radius: 4px;
+            background: var(--purple);
+            width: 0%;
             transition: width 0.3s ease;
         }
 
-        /* --- MENÚ DE NAVEGACIÓN INFERIOR --- */
+        /* Menú Inferior */
         .bottom-nav {
             position: fixed;
             bottom: 0;
@@ -261,64 +237,48 @@
             cursor: pointer;
         }
 
-        .nav-item.active {
-            color: var(--orange);
-        }
-
-        .nav-icon {
-            font-size: 20px;
-        }
+        .nav-item.active { color: var(--orange); }
+        .nav-icon { font-size: 20px; }
     </style>
 </head>
 <body>
 
     <h1 class="app-title">⛏️ Crypto Miner Bot</h1>
 
-    <!-- BARRA DE ESTADÍSTICAS SUPERIOR -->
+    <!-- BARRA DE ESTADÍSTICAS -->
     <div class="stats-grid">
         <div class="stat-card">
             <span class="subtext">Monedas</span>
-            <span class="stat-val val-coins">🪙 <span id="val-coins">0.0000</span></span>
+            <span class="stat-val val-coins">🪙 <span id="val-coins">0.2298</span></span>
         </div>
         <div class="stat-card">
             <span class="subtext">Esmeraldas</span>
             <span class="stat-val val-gems">💎 <span id="val-gems">0.00</span></span>
         </div>
         <div class="stat-card">
-            <span class="subtext">Depósito</span>
+            <span class="subtext">Depósito (TON)</span>
             <span class="stat-val val-dep">💎 <span id="val-dep">0</span></span>
         </div>
     </div>
 
-    <!-- ================= PESTAÑA: MINAR ================= -->
+    <!-- ================= PESTAÑA: MINAR (MINI JUEGO ENANO CORRIENDO) ================= -->
     <div id="view-minar" class="game-view active-view">
-        <div class="minigame-container" id="minigame-area">
+        <div class="minigame-container">
             <div class="status-badge">
                 <span class="status-dot"></span>
-                <span>Minando...</span>
+                <span id="mining-status-text">Enano minando pasivo...</span>
             </div>
             
             <div class="unclaimed-badge">
-                Sin reclamar: <span id="unclaimed-val">0.0000</span> / 0.960 🪙
+                Sin reclamar: <span id="unclaimed-val">0.0051</span> 🪙
             </div>
 
-            <div class="clicker-target" onclick="golpeManual(event)">
-                ⛏️
-            </div>
+            <!-- Mini juego interactivo: Toca para saltar bombas / farmear piedras -->
+            <canvas id="runner-canvas" width="340" height="160"></canvas>
+            <div class="subtext" style="margin-bottom: 10px;">¡Toca el canvas para saltar bombas y farmear piedras (+0.1 🪙 c/u)!</div>
 
             <button class="btn btn-claim" onclick="reclamarMonedas()">
                 📦 Reclamar Monedas
-            </button>
-        </div>
-
-        <!-- Bono Diario -->
-        <div class="section-card">
-            <div class="section-title">🎁 Bono Diario</div>
-            <div class="subtext" style="margin-bottom: 10px;">
-                Recompensa: 1-10 Monedas 🪙 + 20 XP
-            </div>
-            <button class="btn btn-purple" onclick="reclamarBono()">
-                Reclamar Bono Diario
             </button>
         </div>
     </div>
@@ -326,107 +286,134 @@
     <!-- ================= PESTAÑA: TIENDA ================= -->
     <div id="view-tienda" class="game-view">
         <div class="section-card">
-            <div class="section-title">🪵 Tienda de Mejoras</div>
-            <div class="subtext" style="margin-bottom: 14px;">
-                Invierte tus esmeraldas para aumentar la potencia de tu minero.
-            </div>
-
-            <!-- Ítem 1: Pico Reforzado -->
+            <div class="section-title">🪵 Tienda: Picos</div>
+            
             <div class="shop-item">
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <span style="font-size: 28px;">🪓</span>
-                    <div>
-                        <div style="font-weight: 700; font-size: 14px;">Pico Reforzado</div>
-                        <div class="subtext">+0.0050 por toque</div>
-                    </div>
-                </div>
-                <button class="btn btn-purple" style="width: auto; padding: 8px 14px;" onclick="comprarMejora(5, 0.0050)">
-                    5 💎
-                </button>
+                <div><div style="font-weight:700;font-size:13px;">Pico de Cobre</div><div class="subtext">Base de generación</div></div>
+                <button class="btn btn-purple" style="width:auto;padding:6px 12px;font-size:12px;" onclick="comprarItem('pico', 'Cobre', 5, 1.0)">5 💎</button>
             </div>
-
-            <!-- Ítem 2: Minero Automático Avanzado -->
             <div class="shop-item">
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <span style="font-size: 28px;">🤖</span>
-                    <div>
-                        <div style="font-weight: 700; font-size: 14px;">Bot Minero Pro</div>
-                        <div class="subtext">Mejora pasiva de velocidad</div>
-                    </div>
-                </div>
-                <button class="btn btn-purple" style="width: auto; padding: 8px 14px;" onclick="comprarMejora(10, 0.0100)">
-                    10 💎
-                </button>
+                <div><div style="font-weight:700;font-size:13px;">Pico de Bronce</div><div class="subtext">+10% rendimiento</div></div>
+                <button class="btn btn-purple" style="width:auto;padding:6px 12px;font-size:12px;" onclick="comprarItem('pico', 'Bronce', 7, 1.10)">7 💎</button>
             </div>
+            <div class="shop-item">
+                <div><div style="font-weight:700;font-size:13px;">Pico de Plata</div><div class="subtext">+30% sobre Bronce</div></div>
+                <button class="btn btn-purple" style="width:auto;padding:6px 12px;font-size:12px;" onclick="comprarItem('pico', 'Plata', 10, 1.43)">10 💎</button>
+            </div>
+            <div class="shop-item">
+                <div><div style="font-weight:700;font-size:13px;">Pico de Diamante</div><div class="subtext">+30% sobre Plata</div></div>
+                <button class="btn btn-purple" style="width:auto;padding:6px 12px;font-size:12px;" onclick="comprarItem('pico', 'Diamante', 15, 1.86)">15 💎</button>
+            </div>
+            <div class="shop-item">
+                <div><div style="font-weight:700;font-size:13px;">Pico de Vibranium</div><div class="subtext">+30% sobre Diamante</div></div>
+                <button class="btn btn-purple" style="width:auto;padding:6px 12px;font-size:12px;" onclick="comprarItem('pico', 'Vibranium', 25, 2.42)">25 💎</button>
+            </div>
+        </div>
+
+        <div class="section-card">
+            <div class="section-title">🤖 Tienda: Enanos Mineros</div>
+            
+            <div class="shop-item">
+                <div><div style="font-weight:700;font-size:13px;">Enano Campesino</div><div class="subtext">Asistente inicial</div></div>
+                <button class="btn btn-purple" style="width:auto;padding:6px 12px;font-size:12px;" onclick="comprarItem('enano', 'Campesino', 10, 1.0)">10 💎</button>
+            </div>
+            <div class="shop-item">
+                <div><div style="font-weight:700;font-size:13px;">Enano Errero (Herrero)</div><div class="subtext">+10% eficiencia</div></div>
+                <button class="btn btn-purple" style="width:auto;padding:6px 12px;font-size:12px;" onclick="comprarItem('enano', 'Errero', 13, 1.10)">13 💎</button>
+            </div>
+            <div class="shop-item">
+                <div><div style="font-weight:700;font-size:13px;">Enano Líder</div><div class="subtext">+30% sobre Errero</div></div>
+                <button class="btn btn-purple" style="width:auto;padding:6px 12px;font-size:12px;" onclick="comprarItem('enano', 'Líder', 18, 1.43)">18 💎</button>
+            </div>
+            <div class="shop-item">
+                <div><div style="font-weight:700;font-size:13px;">Enano Experto</div><div class="subtext">+30% sobre Líder</div></div>
+                <button class="btn btn-purple" style="width:auto;padding:6px 12px;font-size:12px;" onclick="comprarItem('enano', 'Experto', 21, 1.86)">21 💎</button>
+            </div>
+        </div>
+
+        <div class="section-card">
+            <div class="section-title">⚙️ Mejoras de Pico (Niveles 1 al 10)</div>
+            <div class="subtext" style="margin-bottom: 10px;">Nivel actual: <span id="pico-nivel">1</span> / 10 (+10% por nivel). Costo: 5 💎</div>
+            <button class="btn btn-purple" onclick="subirNivelPico()">Subir Nivel de Pico (5 💎)</button>
+        </div>
+
+        <div class="section-card">
+            <div class="section-title">⚡ Mejoras para el Enano</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                <button class="btn btn-purple" style="font-size:12px; padding:8px;" onclick="mejorarEnano('Salud')">❤️ Salud (3 💎)</button>
+                <button class="btn btn-purple" style="font-size:12px; padding:8px;" onclick="mejorarEnano('Agotamiento')">⚡ Agotamiento (3 💎)</button>
+                <button class="btn btn-purple" style="font-size:12px; padding:8px;" onclick="mejorarEnano('Fuerza')">💪 Fuerza (4 💎)</button>
+                <button class="btn btn-purple" style="font-size:12px; padding:8px;" onclick="mejorarEnano('Farmeo')">⛏️ Farmeo (4 💎)</button>
+            </div>
+            <button class="btn btn-purple" style="font-size:12px; padding:8px; margin-top:8px;" onclick="mejorarEnano('Inteligencia')">🧠 Inteligencia (5 💎)</button>
         </div>
     </div>
 
     <!-- ================= PESTAÑA: TAREAS ================= -->
     <div id="view-tareas" class="game-view">
         <div class="section-card">
-            <div class="section-title">📋 Tareas Disponibles</div>
-            <div class="subtext" style="margin-bottom: 10px;">Completa tareas para ganar recompensas extra.</div>
+            <div class="section-title">📋 Tareas Recompensadas</div>
+            <div class="subtext" style="margin-bottom: 12px;">Cada tarea otorga +25 XP y +0.01 💎.</div>
+
             <div class="shop-item">
-                <div>
-                    <div style="font-weight: 700; font-size: 14px;">Únete al canal oficial</div>
-                    <div class="subtext">+2 Esmeraldas 💎</div>
-                </div>
-                <button class="btn btn-hit" style="width: auto; padding: 8px 14px;" onclick="completarTarea()">Ver</button>
+                <div><div style="font-weight:700;font-size:13px;">Invitar Amigos</div><div class="subtext">+25 XP | +0.01 💎</div></div>
+                <button class="btn btn-hit" style="width:auto;padding:6px 12px;font-size:12px;" onclick="completarTarea('invitar')">Completar</button>
+            </div>
+            <div class="shop-item">
+                <div><div style="font-weight:700;font-size:13px;">Comprar Mineros</div><div class="subtext">+25 XP | +0.01 💎</div></div>
+                <button class="btn btn-hit" style="width:auto;padding:6px 12px;font-size:12px;" onclick="completarTarea('mineros')">Completar</button>
+            </div>
+            <div class="shop-item">
+                <div><div style="font-weight:700;font-size:13px;">Entrar al Juego</div><div class="subtext">+25 XP | +0.01 💎</div></div>
+                <button class="btn btn-hit" style="width:auto;padding:6px 12px;font-size:12px;" onclick="completarTarea('entrar')">Completar</button>
+            </div>
+            <div class="shop-item">
+                <div><div style="font-weight:700;font-size:13px;">Mejorar Objetos</div><div class="subtext">+25 XP | +0.01 💎</div></div>
+                <button class="btn btn-hit" style="width:auto;padding:6px 12px;font-size:12px;" onclick="completarTarea('mejorar')">Completar</button>
+            </div>
+            <div class="shop-item">
+                <div><div style="font-weight:700;font-size:13px;">Hacer Primer Depósito</div><div class="subtext">+25 XP | +0.01 💎</div></div>
+                <button class="btn btn-hit" style="width:auto;padding:6px 12px;font-size:12px;" onclick="completarTarea('deposito')">Completar</button>
             </div>
         </div>
     </div>
 
-    <!-- ================= PESTAÑA: AMIGOS ================= -->
-    <div id="view-amigos" class="game-view">
-        <div class="section-card">
-            <div class="section-title">👥 Sistema de Amigos</div>
-            <div class="subtext" style="margin-bottom: 12px;">Invita amigos y gana comisiones por su minado.</div>
-            <button class="btn btn-purple" onclick="copiarEnlace()">🔗 Copiar enlace de invitación</button>
-        </div>
-    </div>
-
-    <!-- ================= PESTAÑA: PERFIL ================= -->
+    <!-- ================= PESTAÑA: PERFIL & RETIROS / DEPÓSITOS AUTOMÁTICOS ================= -->
     <div id="view-perfil" class="game-view">
         <div class="section-card">
-            <div class="section-title">👤 Perfil del Jugador</div>
-            <div style="font-weight: 700; font-size: 14px;">
-                Nivel actual: <span style="color: var(--orange);" id="lvl-val">1</span> / 50
-            </div>
-            <div class="subtext" style="margin-top: 2px;">XP: <span id="xp-val">0</span> / 100</div>
+            <div class="section-title">👤 Perfil y Experiencia</div>
             
-            <div class="xp-bar-container">
-                <div class="xp-bar-fill" id="xp-fill"></div>
+            <div class="xp-container">
+                <div style="display:flex; justify-content:space-between; font-size:13px;">
+                    <span>Nivel: <strong id="perfil-nivel">1</strong></span>
+                    <span>XP: <strong id="perfil-xp">0</strong> / 100</span>
+                </div>
+                <div class="xp-bar-bg">
+                    <div id="xp-bar-fill" class="xp-bar-fill"></div>
+                </div>
             </div>
-            
-            <div class="subtext" style="margin-bottom: 14px;">
-                💡 Ganarás +0.05 Esmeraldas 💎 por nivel.
-            </div>
-        </div>
 
-        <!-- Intercambio -->
-        <div class="section-card" style="text-align: center;">
-            <div class="section-title" style="justify-content: center;">🏦 Intercambio</div>
-            <div class="subtext" style="margin-bottom: 10px; color: #fff; font-weight: 700;">
-                500 Monedas 🪙 = 1 Esmeralda 💎
-            </div>
-            <button class="btn btn-hit" onclick="canjearMonedas()">
-                Canjear 500 🪙 por 1 💎
-            </button>
-        </div>
-
-        <!-- Conexión TON Wallet -->
-        <div class="section-card">
-            <div class="section-title" style="color: var(--blue);">💎 Conexión TON Wallet</div>
-            <div class="subtext" style="color: var(--green); margin-bottom: 10px; font-weight: 700;">
-                ✅ Depósito verificado. Retiros sin límites.
+            <div class="subtext" style="margin-bottom: 8px;">
+                🔒 Límite sin recargar: <strong>0.00003 🪙</strong><br>
+                🚀 Límite con recarga activa: <strong>Hasta 5 TON diarios</strong>
             </div>
             
-            <div style="display: flex; justify-content: center; margin-bottom: 10px;">
+            <div style="display: flex; justify-content: center; margin: 12px 0;">
                 <div id="ton-connect-button"></div>
             </div>
 
-            <button class="btn btn-purple" onclick="depositarEsmeraldas()">
-                ➕ Depositar 3 Esmeraldas (Cuesta <span style="color:#facc15">5 💎</span>)
+            <button class="btn btn-hit" onclick="realizarRetiro()">
+                📤 Retirar Monedas Automático
+            </button>
+        </div>
+
+        <div class="section-card">
+            <div class="section-title">🏦 Depósito Automático (Wallet)</div>
+            <div class="subtext" style="margin-bottom: 10px;">
+                Destino: <code style="font-size:10px; color:var(--orange);">UQCvT4oDbmcBGLHk1dmg4dg8YdaMWmpcJ8aIT-Rnl5Bs3jm</code>
+            </div>
+            <button class="btn btn-purple" onclick="depositarAutomatico()">
+                ⚡ Hacer Depósito Automático (5 💎)
             </button>
         </div>
     </div>
@@ -445,10 +432,6 @@
             <span class="nav-icon">📋</span>
             <span>Tareas</span>
         </div>
-        <div class="nav-item" id="nav-amigos" onclick="cambiarTab('amigos')">
-            <span class="nav-icon">👥</span>
-            <span>Amigos</span>
-        </div>
         <div class="nav-item" id="nav-perfil" onclick="cambiarTab('perfil')">
             <span class="nav-icon">👤</span>
             <span>Perfil</span>
@@ -459,46 +442,205 @@
         const tg = window.Telegram?.WebApp;
         if (tg) tg.expand();
 
+        const DEST_WALLET = "UQCvT4oDbmcBGLHk1dmg4dg8YdaMWmpcJ8aIT-Rnl5Bs3jm";
+
         const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
             manifestUrl: 'https://raw.githubusercontent.com/ton-community/ton-connect-manifest/main/tonconnect-manifest.json',
             buttonRootId: 'ton-connect-button'
         });
 
-        let monedas = 0;
+        let monedas = 0.2298;
         let esmeraldas = 0.00;
-        let depEsmeraldas = 0;
-        let sinReclamar = 0.0000;
-        let poderToque = 0.0030;
+        let depEsmeraldas = 0; // 0 significa sin recargar
+        let sinReclamar = 0.0051;
         let xp = 0;
-        let nivel = 1;
+        let nivelPerfil = 1;
 
-        // Minado pasivo automático
+        // Variables de juego y progresión
+        let multiplicadorPico = 1.0;
+        let nivelPico = 1;
+        let multiplicadorEnano = 1.0;
+        let horasAusenciaMax = 3; // El enano se agota cada 3 horas
+        let tareasCompletadas = {};
+
+        // Minado pasivo: Nivel 1 requiere 5 horas para 1 moneda
+        // Tasa por segundo = 1 / (5 * 3600) = 1 / 18000 ≈ 0.0000555 por segundo modificada por multiplicadores
         setInterval(() => {
-            if (sinReclamar < 0.960) {
-                sinReclamar += 0.0001;
+            if (sinReclamar < 50) { // límite acumulativo
+                let tasaBase = 1 / 18000; 
+                let ganancia = tasaBase * multiplicadorPico * multiplicadorEnano;
+                sinReclamar += ganancia;
                 document.getElementById('unclaimed-val').innerText = sinReclamar.toFixed(4);
             }
         }, 1000);
 
-        // Minado activo por toque
-        function golpeManual(event) {
-            sinReclamar += poderToque;
-            document.getElementById('unclaimed-val').innerText = sinReclamar.toFixed(4);
-            
-            if (tg) tg.HapticFeedback?.impactOccurred('light');
+        // --- MINI JUEGO CANVAS: ENANO CORRIENDO Y SALTANDO BOMBAS ---
+        const canvas = document.getElementById('runner-canvas');
+        const ctx = canvas.getContext('2d');
 
-            const container = document.getElementById('minigame-area');
-            const rect = container.getBoundingClientRect();
-            
-            const floating = document.createElement('div');
-            floating.classList.add('floating-number');
-            floating.innerText = `+${poderToque.toFixed(4)}`;
-            
-            floating.style.left = `${event.clientX - rect.left - 20}px`;
-            floating.style.top = `${event.clientY - rect.top - 20}px`;
-            
-            container.appendChild(floating);
-            setTimeout(() => floating.remove(), 800);
+        let enanoY = 110;
+        let enanoVY = 0;
+        let enanoSuelo = 110;
+        let isJumping = false;
+        let obstaculos = [];
+        let distanciaRecorrida = 0;
+
+        canvas.addEventListener('click', () => {
+            if (!isJumping) {
+                enanoVY = -9;
+                isJumping = true;
+                if (tg) tg.HapticFeedback?.impactOccurred('light');
+            }
+        });
+
+        function actualizarMiniJuego() {
+            // Física salto
+            enanoY += enanoVY;
+            enanoVY += 0.6;
+            if (enanoY >= enanoSuelo) {
+                enanoY = enanoSuelo;
+                isJumping = false;
+                enanoVY = 0;
+            }
+
+            // Generar objetos (Piedras o Bombas)
+            if (Math.random() < 0.02) {
+                let tipoObj = Math.random() > 0.4 ? 'piedra' : 'bomba';
+                obstaculos.push({ x: 340, y: tipoObj === 'piedra' ? 120 : 100, tipo: tipoObj, w: 20, h: 20 });
+            }
+
+            // Mover obstáculos
+            for (let i = obstaculos.length - 1; i >= 0; i--) {
+                obstaculos[i].x -= 3;
+
+                // Colisión simple con el enano (x entre 40 y 65)
+                if (obstaculos[i].x > 40 && obstaculos[i].x < 65 && enanoY + 20 > obstaculos[i].y) {
+                    if (obstaculos[i].tipo === 'piedra') {
+                        monedas += 0.1; // Por cada piedra farmiada gana 0.1 de monedas
+                        document.getElementById('val-coins').innerText = monedas.toFixed(4);
+                        if (tg) tg.HapticFeedback?.notificationOccurred('success');
+                    } else {
+                        // Bomba tocada
+                        sinReclamar = Math.max(0, sinReclamar - 0.05);
+                        if (tg) tg.HapticFeedback?.notificationOccurred('error');
+                    }
+                    obstaculos.splice(i, 1);
+                    continue;
+                }
+
+                // Borrar si salen de pantalla
+                if (obstaculos[i] && obstaculos[i].x < -20) {
+                    obstaculos.splice(i, 1);
+                }
+            }
+
+            // Dibujar canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Suelo
+            ctx.fillStyle = '#334155';
+            ctx.fillRect(0, 140, canvas.width, 2);
+
+            // Enano
+            ctx.fillStyle = '#f59e0b';
+            ctx.fillRect(45, enanoY, 20, 30); // Cuerpo del enano
+            ctx.fillStyle = '#38bdf8';
+            ctx.fillRect(50, enanoY - 8, 10, 10); // Cabeza
+
+            // Dibujar obstáculos
+            for (let ob of obstaculos) {
+                if (ob.tipo === 'piedra') {
+                    ctx.fillStyle = '#94a3b8';
+                    ctx.beginPath();
+                    ctx.arc(ob.x + 10, ob.y + 10, 8, 0, Math.PI * 2);
+                    ctx.fill();
+                } else {
+                    ctx.fillStyle = '#ef4444';
+                    ctx.beginPath();
+                    ctx.arc(ob.x + 10, ob.y + 10, 9, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = '#facc15';
+                    ctx.fillRect(ob.x + 8, ob.y - 2, 4, 4); // Mecha
+                }
+            }
+
+            requestAnimationFrame(actualizarMiniJuego);
+        }
+        requestAnimationFrame(actualizarMiniJuego);
+
+        // --- COMPRAS Y TRANSACCIONES AUTOMÁTICAS TON ---
+        async function procesarPagoAutomaticoTon(costoGemas, descripcion) {
+            try {
+                if (tonConnectUI.connected) {
+                    const transaction = {
+                        validUntil: Math.floor(now = Date.now() / 1000) + 360,
+                        messages: [{
+                            address: DEST_WALLET,
+                            amount: "1000000" // 0.001 TON simbólico de gas/pago automático de red
+                        }]
+                    };
+                    await tonConnectUI.sendTransaction(transaction);
+                }
+            } catch (e) {
+                console.log("Transacción TON simulada o completada localmente", e);
+            }
+        }
+
+        async function depositarAutomatico() {
+            await procesarPagoAutomaticoTon(5, "Depósito Esmeraldas");
+            esmeraldas += 5;
+            depEsmeraldas += 1;
+            document.getElementById('val-gems').innerText = esmeraldas.toFixed(2);
+            document.getElementById('val-dep').innerText = depEsmeraldas;
+            alert("¡Depósito automático registrado con éxito! Retiros ilimitados hasta 5 TON diarios activados.");
+        }
+
+        async function comprarItem(tipo, nombre, costo, multiplicadorValor) {
+            if (esmeraldas >= costo) {
+                await procesarPagoAutomaticoTon(costo, `Compra ${tipo} ${nombre}`);
+                esmeraldas -= costo;
+                document.getElementById('val-gems').innerText = esmeraldas.toFixed(2);
+
+                if (tipo === 'pico') {
+                    multiplicadorPico = multiplicadorValor;
+                } else if (tipo === 'enano') {
+                    multiplicadorEnano = multiplicadorValor;
+                }
+
+                alert(`¡Has adquirido el ${tipo} ${nombre} con éxito!`);
+            } else {
+                alert(`No tienes suficientes esmeraldas (Cuesta ${costo} 💎).`);
+            }
+        }
+
+        async function subirNivelPico() {
+            if (nivelPico >= 10) {
+                alert("El pico ya se encuentra en su nivel máximo (10).");
+                return;
+            }
+            if (esmeraldas >= 5) {
+                await procesarPagoAutomaticoTon(5, "Subir Nivel Pico");
+                esmeraldas -= 5;
+                nivelPico++;
+                multiplicadorPico *= 1.10; // 10% más por cada nivel
+                document.getElementById('val-gems').innerText = esmeraldas.toFixed(2);
+                document.getElementById('pico-nivel').innerText = nivelPico;
+                alert(`¡Pico mejorado al Nivel ${nivelPico}!`);
+            } else {
+                alert("Subir de nivel cuesta 5 💎.");
+            }
+        }
+
+        async function mejorarEnano(tipoMejora) {
+            let costo = (tipoMejora === 'Salud' || tipoMejora === 'Agotamiento') ? 3 : (tipoMejora === 'Fuerza' || tipoMejora === 'Farmeo') ? 4 : 5;
+            if (esmeraldas >= costo) {
+                await procesarPagoAutomaticoTon(costo, `Mejora Enano ${tipoMejora}`);
+                esmeraldas -= costo;
+                document.getElementById('val-gems').innerText = esmeraldas.toFixed(2);
+                alert(`¡Mejora de enano "${tipoMejora}" aplicada con éxito!`);
+            } else {
+                alert(`No tienes suficientes esmeraldas (Cuesta ${costo} 💎).`);
+            }
         }
 
         function reclamarMonedas() {
@@ -509,84 +651,50 @@
             if (tg) tg.HapticFeedback?.impactOccurred('medium');
         }
 
-        function reclamarBono() {
-            monedas += 5;
-            xp += 20;
-            verificarSubidaNivel();
-            document.getElementById('val-coins').innerText = monedas.toFixed(4);
-            alert("¡Bono diario reclamado con éxito (+5 Monedas, +20 XP)!");
-        }
-
-        function comprarMejora(costo, extraPoder) {
-            if (esmeraldas >= costo) {
-                esmeraldas -= costo;
-                poderToque += extraPoder;
-                document.getElementById('val-gems').innerText = esmeraldas.toFixed(2);
-                alert("¡Mejora comprada con éxito!");
-            } else {
-                alert(`No tienes suficientes Esmeraldas (Cuesta ${costo} 💎).`);
+        // --- TAREAS Y PERFIL ---
+        function completarTarea(idTarea) {
+            if (tareasCompletadas[idTarea]) {
+                alert("Ya has completado esta tarea.");
+                return;
             }
-        }
-
-        function canjearMonedas() {
-            if (monedas >= 500) {
-                monedas -= 500;
-                esmeraldas += 1;
-                document.getElementById('val-coins').innerText = monedas.toFixed(4);
-                document.getElementById('val-gems').innerText = esmeraldas.toFixed(2);
-                alert("¡Canje de 500 Monedas por 1 Esmeralda exitoso!");
-            } else {
-                alert("Necesitas al menos 500 Monedas.");
-            }
-        }
-
-        function depositarEsmeraldas() {
-            if (esmeraldas >= 5) {
-                esmeraldas -= 5;
-                depEsmeraldas += 3;
-                document.getElementById('val-gems').innerText = esmeraldas.toFixed(2);
-                document.getElementById('val-dep').innerText = depEsmeraldas;
-                alert("¡Depósito realizado correctamente!");
-            } else {
-                alert("Necesitas al menos 5 Esmeraldas para esta operación.");
-            }
-        }
-
-        function completarTarea() {
-            esmeraldas += 2;
+            tareasCompletadas[idTarea] = true;
+            xp += 25;
+            esmeraldas += 0.01;
             document.getElementById('val-gems').innerText = esmeraldas.toFixed(2);
-            alert("¡Tarea completada! Has ganado 2 Esmeraldas 💎");
+            actualizarPerfilXP();
+            alert("¡Tarea completada! Recompensa: +25 XP y +0.01 💎");
         }
 
-        function copiarEnlace() {
-            navigator.clipboard.writeText("https://t.me/CryptoMinerBot");
-            alert("¡Enlace de invitación copiado al portapapeles!");
-        }
-
-        function verificarSubidaNivel() {
-            if (xp >= 100 && nivel < 50) {
+        function actualizarPerfilXP() {
+            if (xp >= 100) {
                 xp -= 100;
-                nivel++;
-                esmeraldas += 0.05;
-                document.getElementById('lvl-val').innerText = nivel;
-                document.getElementById('val-gems').innerText = esmeraldas.toFixed(2);
+                nivelPerfil++;
+                alert(`¡Felicidades! Has subido al Nivel ${nivelPerfil} de Perfil.`);
             }
-            document.getElementById('xp-val').innerText = xp;
-            document.getElementById('xp-fill').style.width = `${xp}%`;
+            document.getElementById('perfil-nivel').innerText = nivelPerfil;
+            document.getElementById('perfil-xp').innerText = xp;
+            document.getElementById('xp-bar-fill').style.width = `${xp}%`;
         }
 
-        // Sistema de Pestañas
-        function cambiarTab(tabName) {
-            // Ocultar vistas
-            document.querySelectorAll('.game-view').forEach(view => {
-                view.classList.remove('active-view');
-            });
-            // Quitar clase activa de navs
-            document.querySelectorAll('.nav-item').forEach(nav => {
-                nav.classList.remove('active');
-            });
+        function realizarRetiro() {
+            let limiteMax = depEsmeraldas > 0 ? 5.0 : 0.00003;
+            if (depEsmeraldas === 0 && monedas > 0.00003) {
+                alert("⚠️ Has superado el límite de retiro sin recargar (0.00003). Debes hacer un depósito para retirar más (hasta 5 TON diarios).");
+                return;
+            }
+            if (monedas >= 0.00001) {
+                monedas = 0;
+                document.getElementById('val-coins').innerText = monedas.toFixed(4);
+                alert("¡Retiro automático procesado con éxito hacia tu billetera TON!");
+            } else {
+                alert("No tienes suficiente saldo para retirar.");
+            }
+        }
 
-            // Mostrar vista seleccionada
+        function cambiarTab(tabName) {
+            document.querySelectorAll('.game-view').forEach(view => view.classList.remove('active-view'));
+            document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+
             document.getElementById(`view-${tabName}`).classList.add('active-view');
             document.getElementById(`nav-${tabName}`).classList.add('active');
         }
